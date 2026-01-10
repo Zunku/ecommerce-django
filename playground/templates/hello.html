@@ -1,0 +1,18 @@
+<html>
+    <body>
+        {# Html comments <!--  --> don't work with django templates #}
+
+        {# {{variable}} #}
+        {# {{% logic %}} #}
+
+        {# In real world, templates are not really used, Django is normally used only to create APIs, not HTML code/front-end #}
+
+        {% if name %}
+        <h1>Hello {{name}}</h1>
+
+        {% else %}
+        <h1>Hello World</h1>
+
+        {% endif %} 
+    </body>
+</html>
