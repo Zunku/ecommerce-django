@@ -76,7 +76,7 @@ class Adress(models.Model):
     
 class Collection(models.Model):
     title = models.CharField(max_length=255)
-    # related_name = '+' Tells Django not to create the reverse relationship. Useful for circular relationships
+    # related_name = '+' Tells Django not to create the reverse relationship. Useful to avoid conflicts on a circular relationship
     featured_product = models.ForeignKey('Product', on_delete=models.SET_NULL, null=True, related_name='+')
 
 # Defining a * to 1 relationship with ForeignKey
