@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Adding a new field to adress table named zip
         migrations.AddField(
             model_name='adress',
             name='zip',
