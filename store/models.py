@@ -11,12 +11,14 @@ class Promotion(models.Model):
 class Product(models.Model):
     # Assigning an atribute title with Char data field
     title = models.CharField(max_length=255)
+    # slug is an extension of the url to help search motors to find an object. Usually a string related to the object
+    slug = models.SlugField()
     # A better data field for large text
     description = models.TextField()
     # For monetary values always use DecimalField
     # Better than float bc it don't have rounding issues
     # The max price of our products will be 9999.99
-    price = models.DecimalField(max_digits=6, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=6, decimal_places=2)
     inventory = models.IntegerField()
     # To storing the date of the last object update
     # auto_now=True Automatically saves the current date on this field
@@ -48,7 +50,15 @@ class Customer(models.Model):
         (MEMBERSHIP_GOLD, 'Gold'),
     ]
     membership = models.CharField(max_length=1, choices=MEMBERSHIP_CHOICES, default=MEMBERSHIP_BRONZE)
-
+    # This class if for change metadata
+    class Meta:
+        # Change db table name, is not recomended because you are breking the convention and also have to change every table name to make consistency
+        db_table = 'store_customers'
+        # indexes is a way to optimize querys
+        indexes = [
+            models.Index(fields=['last_name', 'first_name'])
+        ]
+    
 class Order(models.Model):
     placed_at = models.DateTimeField(auto_now_add=True)
     # We should never delete orders, because orders represent our sales
@@ -73,6 +83,7 @@ class Adress(models.Model):
     # on_delete allows you to control what will happen with the child when the parent is deleted. model.CASCADE deletes the child when the parent is deleted.
     # primary_key forces this field to be unique, avoiding a 1 to * relationship
     customer = models.OneToOneField(Customer, on_delete=models.CASCADE, primary_key=True)
+    zip = models.CharField(max_length=255)
     
 class Collection(models.Model):
     title = models.CharField(max_length=255)
