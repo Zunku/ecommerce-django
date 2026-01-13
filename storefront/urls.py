@@ -21,7 +21,9 @@ import debug_toolbar
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
     # Any url that starts with playground will be routed to our playground app
     path('playground/', include('playground.urls')),
+    
     path('__debug__/', include(debug_toolbar.urls))
 ]

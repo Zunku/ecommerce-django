@@ -9,5 +9,6 @@ from . import views
 urlpatterns = [
     # 'URL', view functions
     # All our routes must end with /
-    path('hello/', views.render_say_hello)
+    path('hello/', views.render_say_hello),
+    path('filtering/', views.filtering)
 ]

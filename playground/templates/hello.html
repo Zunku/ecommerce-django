@@ -3,7 +3,7 @@
         {# Html comments <!--  --> don't work with django templates #}
 
         {# {{variable}} #}
-        {# {{% logic %}} #}
+        {# {% logic %} #}
 
         {# In real world, templates are not really used, Django is normally used only to create APIs, not HTML code/front-end #}
 
@@ -14,5 +14,10 @@
         <h1>Hello World</h1>
 
         {% endif %} 
+        <ul>
+            {% for product in products %}
+            <li>{{product.inventory}}, {{product.unit_price}}</li>
+            {% endfor %}
+        </ul>
     </body>
 </html>
