@@ -16,7 +16,7 @@
         {% endif %} 
         <ul>
             {% for product in products %}
-            <li>{{product.inventory}}, {{product.unit_price}}</li>
+            <li>{{product.placed_at}} - {{product.id}} - {{product.customer.last_name}} - {{product.orderitem_set}}</li>
             {% endfor %}
         </ul>
     </body>

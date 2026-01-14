@@ -10,5 +10,6 @@ urlpatterns = [
     # 'URL', view functions
     # All our routes must end with /
     path('hello/', views.render_say_hello),
-    path('filtering/', views.filtering)
+    path('filtering/', views.filtering),
+    path('sort-limit/', views.sort_limit)
 ]

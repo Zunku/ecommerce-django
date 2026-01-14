@@ -94,6 +94,58 @@ def filtering(request):
     query_set6 = Product.objects.filter(Q(inventory__lt=10) | ~Q(unit_price__lt=20))
     
     # F objects allows us to reference a particular field
-    # Indexing
-    query_set7 = Product.objects.filter(inventory=F('unit_price'))
-    return render(request, 'hello.html', {'name': 'Mosh', 'products': list(query_set6)})
+    # Also using __ we can reference related tables
+    # Indexing products where inventory == collection table featured product id
+    query_set7 = Product.objects.filter(inventory=F('collection__featured_product_id'))
+    
+    return render(request, 'hello.html', {'name': 'Mosh', 'products': list(query_set7)})
+
+def sort_limit(request):
+    # Sorting products by title. - for inverse order
+    # We can also order by several fields
+    # reverse() reverse the direction of the sort
+    query_set = Product.objects.order_by('unit_price','-title').reverse()
+    
+    # Indexing the first object ordering by unit_price
+    first_product = Product.objects.order_by('unit_price')[0]
+    first_product = Product.objects.earliest('unit_price')
+    
+    # Indexing the first object ordering by -unit_price
+    last_product = Product.objects.latest('unit_price')
+    
+    # We can limit objects with the same python slicing [:] syntax
+    # Indexing the first 5 objects
+    query_set1 = Product.objects.all()[:5]
+    # Indexing object 5 - 10
+    query_set1 = Product.objects.all()[5:10]
+    
+    # .values() Allow us to index only selected files from a table, with __ allows us to index related tables, making joins
+    # Each object is a dictionary, not a product instance like before
+    query_set2 = Product.objects.values('id', 'title', 'collection__title')
+    # .values_list() Returns tuples instead of dictionaries
+    query_set2 = Product.objects.values_list('id', 'title', 'collection__title')
+    
+    # .distinct() Index only unique values
+    ordered_products = Product.objects.values('title', 'id').filter(id=F('orderitem__product_id')).distinct().order_by('title')
+    
+    # .defer() Exlude a field, be careful bc if you index later the same field, you will end with a lot of querys
+    # Returns objects
+    query_set4 = Product.objects.defer('description')
+    
+    # select_related(1) Index a related table and makes a inner join, for relations -:1 with parent
+    # To access that filed in templates you need to product.collection.title for example
+    query_set5 = Product.objects.select_related('collection').all()
+    
+    # prefetch_related(n) Index a related table, for relations -:n with parent
+    # Makes two querys, one for indexing the first table, and the other one the related table
+    query_set6 = Product.objects.prefetch_related('promotions').all()
+    
+    # Get the last 5 orders with their customer and items (including products)
+    # For backward relationships, Django uses the parentmodelname_set name 
+    query_set7 = Order.objects.order_by('-placed_at')[:5].select_related('customer').prefetch_related('orderitem_set')
+    
+    
+    # Este esta mal porque me devuelve varios items de la orden
+    query_set8 = OrderItem.objects.all().select_related('order').order_by('-order__placed_at')[:5]
+
+    return render(request, 'hello.html', {'name': 'Mosh', 'products': list(query_set7)})
