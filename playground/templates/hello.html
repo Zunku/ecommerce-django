@@ -13,10 +13,17 @@
         {% else %}
         <h1>Hello World</h1>
 
-        {% endif %} 
+        {% endif %}
+        {# This way we iterate relationships, in templates we still can use simple methods like .all#}
         <ul>
-            {% for product in products %}
-            <li>{{product.placed_at}} - {{product.id}} - {{product.customer.last_name}} - {{product.orderitem_set}}</li>
+            {% for order in orders %}
+            <li>{{order.placed_at}} - {{order.id}} - {{order.customer.last_name}}</li>
+            <ul>
+                {# This way we convert a manager object into an iterable queryset #}
+                {% for orderitem in order.orderitem_set.all %}
+                <li>{{orderitem.product.title}}</li>
+                {% endfor %}
+            </ul>
             {% endfor %}
         </ul>
     </body>

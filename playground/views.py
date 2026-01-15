@@ -8,9 +8,19 @@ from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
 # Q is short for Query. Q objects
 # F is a short for Field. Allows us to reference a particular field.
-from django.db.models import Q, F
+# Values allow us to use Values inside querysets 
+from django.db.models import Q, F, Value, Func, ExpressionWrapper, DecimalField
+# Aggregate functions, the same as in SQL
+from django.db.models.aggregates import Count, Max, Min, Avg, Sum
+# SQL CONCAT Function
+from django.db.models.functions import Concat
 
-from store.models import Product, Order, OrderItem
+# Model that represent the ContentType table
+from django.contrib.contenttypes.models import ContentType
+
+from store.models import Product, Order, OrderItem, Customer
+
+from tags.models import TaggedItem
 
 # Create your views here.
 # View function: request -> response
@@ -33,7 +43,7 @@ def render_say_hello(request):
     # http_request, template_name, variable
     return render(request, 'hello.html', {'name': 'Mosh'})
 
-def manager_objects(requests):
+def manager_objects(request):
     # Product.objects Returns a manager object
     # Creating a query_set. An object that encapsulate a query
     query_set = Product.objects.all()
@@ -63,6 +73,7 @@ def manager_objects(requests):
     
     # exist returns a boolean evaluating if the element exist
     exists = Product.objects.filter(pk=0).exists()
+    
     
 def filtering(request):
     
@@ -106,6 +117,7 @@ def sort_limit(request):
     # reverse() reverse the direction of the sort
     query_set = Product.objects.order_by('unit_price','-title').reverse()
     
+    # Limiting objects
     # Indexing the first object ordering by unit_price
     first_product = Product.objects.order_by('unit_price')[0]
     first_product = Product.objects.earliest('unit_price')
@@ -119,12 +131,14 @@ def sort_limit(request):
     # Indexing object 5 - 10
     query_set1 = Product.objects.all()[5:10]
     
+    # Select fields
     # .values() Allow us to index only selected files from a table, with __ allows us to index related tables, making joins
     # Each object is a dictionary, not a product instance like before
     query_set2 = Product.objects.values('id', 'title', 'collection__title')
     # .values_list() Returns tuples instead of dictionaries
     query_set2 = Product.objects.values_list('id', 'title', 'collection__title')
     
+    # Distinc
     # .distinct() Index only unique values
     ordered_products = Product.objects.values('title', 'id').filter(id=F('orderitem__product_id')).distinct().order_by('title')
     
@@ -132,6 +146,7 @@ def sort_limit(request):
     # Returns objects
     query_set4 = Product.objects.defer('description')
     
+    # Related tables
     # select_related(1) Index a related table and makes a inner join, for relations -:1 with parent
     # To access that filed in templates you need to product.collection.title for example
     query_set5 = Product.objects.select_related('collection').all()
@@ -141,11 +156,70 @@ def sort_limit(request):
     query_set6 = Product.objects.prefetch_related('promotions').all()
     
     # Get the last 5 orders with their customer and items (including products)
-    # For backward relationships, Django uses the parentmodelname_set name 
-    query_set7 = Order.objects.order_by('-placed_at')[:5].select_related('customer').prefetch_related('orderitem_set')
+    # For reverse relationships, Django uses the parentmodelname_set name
+    # We can expand our query to add products with __
+    query_set7 = Order.objects.order_by('-placed_at')[:5].select_related('customer').prefetch_related('orderitem_set__product')
     
-    
-    # Este esta mal porque me devuelve varios items de la orden
-    query_set8 = OrderItem.objects.all().select_related('order').order_by('-order__placed_at')[:5]
+    return render(request, 'hello.html', {'name': 'Mosh', 'orders': query_set7})
 
-    return render(request, 'hello.html', {'name': 'Mosh', 'products': list(query_set7)})
+def aggregate_func(request):
+    
+    # Aggregate functions
+    # Count all the fields of that column that are not null, returns a dictionary
+    # We can pass a keyword argument to rename the dictionary key
+    result = Product.objects.aggregate(count=Count('id'), min_price=Min('unit_price'))
+    
+    # Annotating objects
+    # .annotate() Add a new field to the table, fieldname = defaultvalue
+    # Value() Is an expression that allow us to use Values
+    # It not saves the query in the database
+    queryset1 = Customer.objects.annotate(is_new=Value(True))
+    
+    # You can also use field references with F Objects and make computations
+    # Creating a new id to each row with +1
+    queryset2 = Customer.objects.annotate(new_id=F('id')+1)
+    
+    # Database functions
+    # Func() expression class allow us to use SQL Functions like CONCAT
+    # You need to use Values(' ') bc if not django thinks it's a columnname
+    # CONCAT
+    queryset3 = Customer.objects.annotate(
+        full_name=Func(F('first_name'), Value(' '), 
+                       F('last_name'), function='CONCAT')
+    )
+    
+    # A short way using the Concat() class
+    queryset4 = Customer.objects.annotate(
+        full_name=Concat('first_name', Value(' '), 'last_name')
+    )
+    
+    # Grouping data
+    # Grouping orders by customers using Count()
+    queryset5 = Customer.objects.annotate(
+        # When you use an aggregate funcion inside an annotate() it automaticaly group 
+        # With Count() if we want to use a reverse relation ship, you don't have to use fieldname_set, just fieldname
+        orders_count=Count('order')
+    )
+    
+    # Expression Wrappers
+    # Allow us to wrap complex expressions (such as arithmetic on F() with different types) and select the output field (need to be imported)
+    discounted_price = ExpressionWrapper(F('unit_price') * 0.8, output_field=DecimalField())
+    queryset6 = Product.objects.annotate(
+        discounted_price=discounted_price
+    )
+    
+    # Querying Generic Relationships
+    # ContentType is the model that represent the django_content_type table
+    # get_for_model is a special method for the ContentType object manager. It returns the Content Type of a model class.
+    content_type = ContentType.objects.get_for_model(Product)
+    
+    # \ Allow to separate code in diferent lines
+    # Indexing tags for product with product_id = 1
+    queryset7 = TaggedItem.objects \
+    .select_related('tag') \
+    .filter(
+        content_type=content_type,
+        object_id=1
+    )
+    return render(request, 'aggregate_func.html', {'name': 'Daniel', 'result': queryset7})
+
