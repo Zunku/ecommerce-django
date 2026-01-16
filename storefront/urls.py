@@ -19,6 +19,11 @@ from django.contrib import admin
 from django.urls import path, include
 import debug_toolbar
 
+# Changing the admin interface header
+admin.site.site_header = 'Storefront Admin'
+# Chaning the index_title
+admin.site.index_title = 'Admin'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     

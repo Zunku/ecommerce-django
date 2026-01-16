@@ -14,7 +14,7 @@ from django.db.models import Q, F, Value, Func, ExpressionWrapper, DecimalField
 from django.db.models.aggregates import Count, Max, Min, Avg, Sum
 # SQL CONCAT Function
 from django.db.models.functions import Concat
-
+from django.db import transaction, connection
 # Model that represent the ContentType table
 from django.contrib.contenttypes.models import ContentType
 
@@ -172,7 +172,7 @@ def aggregate_func(request):
     result = Product.objects.aggregate(count=Count('id'), min_price=Min('unit_price'))
     
     # Annotating objects
-    # .annotate() Add a new field to the table, fieldname = defaultvalue
+    # .annotate() Add a new field to the table, newfieldname = value
     # Value() Is an expression that allow us to use Values
     # It not saves the query in the database
     queryset1 = Customer.objects.annotate(is_new=Value(True))
@@ -246,23 +246,39 @@ def updating_objects(request):
     Collection.objects.filter(id__gt=5).delete()
     return render(request, 'aggregate_func.html', {'name': 'Daniel', 'result': collection})
 
+# Wrap the entire view as a transaction
+# @transaction.atomic()
 def transactions(request):
     
+    print('This code is not inside the transaction')
     # Transactions
-    # A way to make several changes on our database in an anomic way, meaning all changes should be saved togheter. If one changes fails then all changes should be rolled back
+    # A way to make several changes on our database in an anomic way, meaning all changes should be saved togheter. If one changes fails then all changes should be rolled back. Excelet for orders with items for example, it avoid a lot of bugs and inconsistenties.
     # In relatinoal datababases, we should alawys creater the father before the child
-    # order = Order()
-    # order.customer_id = 1
-    # order.save()
     
-    # item = OrderItem()
-    # item.order = order
-    # item.product_id = 1
-    # item.quantity = 1
-    # item.unit_price = 10
-    # item.save()
+    # If we want more control over code that will be inside the transaction we can use with. We don't need the decorator. Returns a context manager
+    with transaction.atomic():
+        order = Order()
+        order.customer_id = 1
+        order.save()
+        
+        item = OrderItem()
+        item.order = order
+        item.product_id = 2
+        item.quantity = 1
+        item.unit_price = 10
+        item.save()
     
-    queryset = Customer.objects.annotate(
-        sales_per_customer=Count('order__orderitem')
-    ).values_list('first_name','order__orderitem')
+    # Executing raw SQL Querys, use it only when dealing with complex querys, or for optimizing them. Try to always use django object manager
+    # It returns a diferent queryset object, it don't allow methonds like filter, annotate, etc.
+    queryset = Product.objects.raw('SELECT * FROM store_product')
+    
+    # Executing querys that don't map our model objects. Accessing the database directly and bypass the model layer
+    # The cursor must be close everytime you use it to realese the allocated resources
+    # So with allow us to close it despite we have an exception
+    with connection.cursor() as cursor:
+        cursor.execute('INSERT "anything" FROM store_product')
+        
+        # Execute an stored procedure, it's more cleaner than writing SQL code in the middle of your Python code
+        cursor.callproc('get_customers', [1,2,3])
+    
     return render(request, 'aggregate_func.html', {'name': 'Daniel', 'result': queryset})

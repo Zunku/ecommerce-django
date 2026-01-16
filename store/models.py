@@ -30,6 +30,17 @@ class Product(models.Model):
     # related_name allows you to change the name of the related class field. If you do this, you have to be consistent and change all the models related_name. It's better to stick with Django convention
     promotions = models.ManyToManyField(Promotion)
     
+    # Changing the object representation when you convert it to a string
+    def __str__(self):
+        # Now it will return it's title
+        return self.title
+    
+    # Creating a Meta class to define the specific order of our collection objects
+    # A Djando Meta class it's a way to configure our models. Are instructions for Django
+    class Meta:
+        # Allows you to define an order
+        ordering = ['title']
+    
 class Customer(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
@@ -50,7 +61,7 @@ class Customer(models.Model):
         (MEMBERSHIP_GOLD, 'Gold'),
     ]
     membership = models.CharField(max_length=1, choices=MEMBERSHIP_CHOICES, default=MEMBERSHIP_BRONZE)
-    # This class if for change metadata
+    # This class it's for change metadata
     class Meta:
         # Change db table name, is not recomended because you are breking the convention and also have to change every table name to make consistency
         db_table = 'store_customers'
@@ -58,6 +69,11 @@ class Customer(models.Model):
         indexes = [
             models.Index(fields=['last_name', 'first_name'])
         ]
+        ordering = ['first_name', 'last_name']
+        
+    def __str__(self):
+        # Now it will return it's first_name
+        return f'{self.first_name} {self.last_name}'
     
 class Order(models.Model):
     placed_at = models.DateTimeField(auto_now_add=True)
@@ -90,6 +106,17 @@ class Collection(models.Model):
     # related_name = '+' Tells Django not to create the reverse relationship. Useful to avoid conflicts on a circular relationship
     featured_product = models.ForeignKey('Product', on_delete=models.SET_NULL, null=True, related_name='+')
 
+    # Changing the object representation when you convert it to a string
+    def __str__(self):
+        # Now it will return it's title
+        return self.title
+    
+    # Creating a Meta class to define the specific order of our collection objects
+    # A Djando Meta class it's a way to configure our models. Are instructions for Django
+    class Meta:
+        # Allows you to define an order
+        ordering = ['title']
+        
 # Defining a * to 1 relationship with ForeignKey
 class OrderItem(models.Model):
     # ForeignKey: It's a reference to another model, like say "this registry belongs to another one". Allows you to create a * to 1 relationship with the parent. Each Item saves an OrderID.
