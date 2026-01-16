@@ -18,7 +18,7 @@ from django.db.models.functions import Concat
 # Model that represent the ContentType table
 from django.contrib.contenttypes.models import ContentType
 
-from store.models import Product, Order, OrderItem, Customer
+from store.models import Product, Order, OrderItem, Customer, Collection
 
 from tags.models import TaggedItem
 
@@ -58,7 +58,7 @@ def manager_objects(request):
     # Managing exceptions
     try:
         # Indexing an element from our table, returns an object
-        # pk: Primary Key
+        # pk: Primary Key. Useful bc we don't have to remember the name of the field
         product = Product.objects.get(pk=1)
     except ObjectDoesNotExist:
         pass
@@ -135,8 +135,10 @@ def sort_limit(request):
     # .values() Allow us to index only selected files from a table, with __ allows us to index related tables, making joins
     # Each object is a dictionary, not a product instance like before
     query_set2 = Product.objects.values('id', 'title', 'collection__title')
+    
     # .values_list() Returns tuples instead of dictionaries
-    query_set2 = Product.objects.values_list('id', 'title', 'collection__title')
+    # flat=True Deletes the tuple and returns the string alone when only one field
+    query_set2 = Product.objects.values_list('id', 'title', 'collection__title', flat=True)
     
     # Distinc
     # .distinct() Index only unique values
@@ -208,18 +210,59 @@ def aggregate_func(request):
         discounted_price=discounted_price
     )
     
-    # Querying Generic Relationships
-    # ContentType is the model that represent the django_content_type table
-    # get_for_model is a special method for the ContentType object manager. It returns the Content Type of a model class.
-    content_type = ContentType.objects.get_for_model(Product)
+    # Custom manager, returns the tags for the specified object and ID
+    # For some reason intelisense don't work, but it still works
+    queryset7 = TaggedItem.objects.get_tags_for(Product, 1)
+
+    # Creating Objects/Insert
+    collection = Collection()
+    collection.title = 'Sports'
+    collection.featured_product = Product(pk=2)
+    # Every model have a method save insert a new record in our database
+    collection.save()
     
-    # \ Allow to separate code in diferent lines
-    # Indexing tags for product with product_id = 1
-    queryset7 = TaggedItem.objects \
-    .select_related('tag') \
-    .filter(
-        content_type=content_type,
-        object_id=1
-    )
     return render(request, 'aggregate_func.html', {'name': 'Daniel', 'result': queryset7})
 
+def updating_objects(request):
+
+    # Updating Objects
+    # We have to access directly to the object because otherway, if we try to update only one field of the object, we will generate data loss
+    collection = Collection.objects.get(pk=18)
+    collection.title = 'E Sports'
+    collection.featured_product = None
+    # Every model have a method save that saves the record in our database
+    collection.save()
+    
+    # Method 2, it's a bit faster, but makes our code a bit fragile because we can't update the parameter automatically with F2
+    Collection.objects.filter(pk=18).update(featured_product=None)
+    
+    # Deleting Objects
+    # This way we delete a single object
+    collection = Collection(pk=11)
+    collection.delete()
+    
+    # This way we delete several objects (with id greather than 5)
+    # We have to first create a queryset we want to delete
+    Collection.objects.filter(id__gt=5).delete()
+    return render(request, 'aggregate_func.html', {'name': 'Daniel', 'result': collection})
+
+def transactions(request):
+    
+    # Transactions
+    # A way to make several changes on our database in an anomic way, meaning all changes should be saved togheter. If one changes fails then all changes should be rolled back
+    # In relatinoal datababases, we should alawys creater the father before the child
+    # order = Order()
+    # order.customer_id = 1
+    # order.save()
+    
+    # item = OrderItem()
+    # item.order = order
+    # item.product_id = 1
+    # item.quantity = 1
+    # item.unit_price = 10
+    # item.save()
+    
+    queryset = Customer.objects.annotate(
+        sales_per_customer=Count('order__orderitem')
+    ).values_list('first_name','order__orderitem')
+    return render(request, 'aggregate_func.html', {'name': 'Daniel', 'result': queryset})

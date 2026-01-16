@@ -13,4 +13,6 @@ urlpatterns = [
     path('filtering/', views.filtering),
     path('sort-limit/', views.sort_limit),
     path('aggregate-func/', views.aggregate_func),
+    path('updating-objects/', views.updating_objects),
+    path('transactions/', views.transactions),
 ]
