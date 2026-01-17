@@ -24,11 +24,14 @@ admin.site.site_header = 'Storefront Admin'
 # Chaning the index_title
 admin.site.index_title = 'Admin'
 
+# A spacial variable that stores URLs, receives requests and directs them to their correspondant apps
 urlpatterns = [
     path('admin/', admin.site.urls),
     
     # Any url that starts with playground will be routed to our playground app
     path('playground/', include('playground.urls')),
     
+    path('store/', include('store.urls')),
+
     path('__debug__/', include(debug_toolbar.urls))
 ]

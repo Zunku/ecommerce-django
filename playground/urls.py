@@ -7,7 +7,7 @@ from . import views
 # Special variable that storge urls patterns objects
 # URL conf module, each app can have it's own
 urlpatterns = [
-    # 'URL', view functions
+    # path('URL/', view function)
     # All our routes must end with /
     path('hello/', views.render_say_hello),
     path('filtering/', views.filtering),
