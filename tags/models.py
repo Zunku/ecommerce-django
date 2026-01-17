@@ -25,7 +25,9 @@ class TaggedItemManager(models.Manager):
 
 class Tag(models.Model):
     label = models.CharField(max_length=255)
-    
+    def __str__(self):
+        return self.label
+
 class TaggedItem(models.Model):
     # Replacinag the objects atribute from TaggedItem with our Custom Manager
     objects = TaggedItemManager()

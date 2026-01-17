@@ -1,4 +1,6 @@
-from django.contrib import admin
+# It's useful to sort your imports by alphabeth
+
+from django.contrib import admin, messages
 from django.db.models.aggregates import Count
 from django.utils.html import format_html, urlencode
 from django.urls import reverse
@@ -11,6 +13,7 @@ from . import models
 @admin.register(models.Collection)
 class CollectionAdmin(admin.ModelAdmin):
     list_display = ['title', 'products_count']
+    search_fields = ['title']
     
     # Adding a Computed Column
     @admin.display(ordering='products_count')
@@ -59,6 +62,19 @@ class InventoryFilter(admin.SimpleListFilter):
 # In this class we can specify how we want to view/edit our products
 # For convention you need to use ModelnameAdmin
 class ProductAdmin(admin.ModelAdmin):
+    # Customizing Forms (a form to add new objects to the db)
+    # Autocomplete the field with a search method from the model
+    autocomplete_fields = ['collection']
+    # Fill automaticaly one field with another one
+    prepopulated_fields = {
+        'slug': ['title']
+    }
+    # Exclude fields from the form
+    # readonly_fields to converte a field to read only, fields to select the fields to show
+    exclude = ['promotions']
+    # List of actions
+    actions = ['clear_inventory']
+    search_fields = ['title']
     # What fileds will be diaplayed
     list_display = ['title', 'unit_price', 'inventory_status', 'collection_title']
     # What field will de editable
@@ -69,6 +85,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_per_page = 10
     # Is like .select_related. Allows you to select a related table. This avoid creating extra querys for each product
     list_select_related = ['collection']
+    
     # Adding a Computed Column
     # If inventory < 10 returns 'Low'
     # This decorator allow to add atributes to a display function, like ordering
@@ -81,6 +98,20 @@ class ProductAdmin(admin.ModelAdmin):
     # Selecting Related Objects. In this case is not needed because collection already returns it's title when it's called it's just an example
     def collection_title(self, product):
         return product.collection.title
+    
+    # Creating Custom Actions
+    @admin.action(description='Clear inventory')
+    # Name of the action
+    def clear_inventory(self, request, queryset):
+        # Actual action
+        updated_count = queryset.update(inventory=0)
+        # Shows a message to the user when the action is aplied
+        self.message_user(
+            request, 
+            f'{updated_count} products were succcessfully updated.',
+            # Type of message
+            messages.ERROR
+        )
         
 # Registering Product model with its ProductAdmin class
 admin.site.register(models.Product, ProductAdmin)
@@ -111,8 +142,25 @@ class CustomerAdmin(admin.ModelAdmin):
             orders_count=Count('order')
             )
 
+# Editing Childs Using Inlines
+# Is a way to create a new object when you are creating another object
+# In this case, we want to be able to create orderitems when we are creating an order
+# Also you can use admin.StackedInline insted to separate fields by line
+class OrderItemInline(admin.TabularInline):
+    autocomplete_fields = ['product']
+    # min items to enable the object creation
+    min_num = 1
+    # max items to enable the object creation
+    max_num = 10
+    # extra lines that are created automaticaly
+    extra = 0
+    model = models.OrderItem
+
 # Registering Order model    
 @admin.register(models.Order)
 class OrderAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['customer']
+    inlines = [OrderItemInline]
     list_display = ['id','placed_at', 'payment_status', 'customer']
     list_per_page = 10
+    

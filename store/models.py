@@ -1,4 +1,6 @@
 from django.db import models
+# Module for Data Validation
+from django.core.validators import MinValueValidator
 
 class Promotion(models.Model):
     description = models.CharField(max_length=255)
@@ -14,12 +16,18 @@ class Product(models.Model):
     # slug is an extension of the url to help search motors to find an object. Usually a string related to the object
     slug = models.SlugField()
     # A better data field for large text
-    description = models.TextField()
+    # Data Validation
+    # blank is an argument to allow empty text in the object form
+    description = models.TextField(null=True, blank=True)
     # For monetary values always use DecimalField
     # Better than float bc it don't have rounding issues
     # The max price of our products will be 9999.99
-    unit_price = models.DecimalField(max_digits=6, decimal_places=2)
-    inventory = models.IntegerField()
+    unit_price = models.DecimalField(max_digits=6, 
+                                     decimal_places=2,
+                                     # Data Validation
+                                     # Here you can put your validators, (minvalue, message=optional)
+                                     validators=[MinValueValidator(1)])
+    inventory = models.IntegerField(validators=[MinValueValidator(1)])
     # To storing the date of the last object update
     # auto_now=True Automatically saves the current date on this field
     last_update = models.DateTimeField(auto_now=True)
@@ -28,7 +36,7 @@ class Product(models.Model):
     
     # Defining a Many to Many relationship between two models
     # related_name allows you to change the name of the related class field. If you do this, you have to be consistent and change all the models related_name. It's better to stick with Django convention
-    promotions = models.ManyToManyField(Promotion)
+    promotions = models.ManyToManyField(Promotion, blank=True)
     
     # Changing the object representation when you convert it to a string
     def __str__(self):
