@@ -1,13 +1,21 @@
-# Serializers are objects that convert model instances to dictionaries and vice versa
+# Serializers are objects that convert model instances to dictionaries/JSON and vice versa
+# Deserialization: convert JSON/dictionaries to model instances
 from rest_framework import serializers
 from decimal import Decimal
 from .models import Product, Collection, Customer
 
 # It's not te best way to serialize, Model Serializers are better
-class CollectionSerializer(serializers.Serializer):
+class WrongCollectionSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField(max_length=255)
 
+class CollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = ['id', 'title', 'product_count']
+    # Adding an Annotated() field to the model
+    product_count = serializers.IntegerField(read_only=True)
+    
 # Creating a class to serialize Products
 # It's exactly like defining a model
 # Serializers not necesary have to look like model objects, they can have their own fields
@@ -23,7 +31,7 @@ class ProductSerializer(serializers.ModelSerializer):
     # source Django asumes that the serializer fields will match the models fields, if not, you need to use this parameter to indicate the model field source, but is not a good practice changing field names bc you are breaking consistency
     price = serializers.DecimalField(max_digits=6, decimal_places=2, source='unit_price')
     
-    # Custom Serializer Field
+    # Custom Serializer Method Field
     price_with_tax = serializers.SerializerMethodField(method_name='calculate_tax')
     
     # Serializing Relationships
@@ -52,6 +60,19 @@ class ProductSerializer(serializers.ModelSerializer):
     def calculate_tax(self, product:Product):
         return product.unit_price * Decimal(1.1)
 
+    # Overwrighting create() method. This method takes the validated_data and creates a new field "other". It's called by the save() method if we try to create a new product
+    # def create(self, validated_data):
+    #     product = Product(**validated_data)
+    #     product.other = 1
+    #     product.save()
+    #     return product
+    
+    # Overwrighing the update() method. It's called by the save() method when trying to update
+    # def update(self, instance, validated_data):
+    #     instance.unit_price = validated_data.get('unit_price')
+    #     instance.save()
+    #     return instance
+    
 # Model Serializers
 # It's a much better way
 # This way, there is no need to define the validaton rules two times, in the serializer and the model

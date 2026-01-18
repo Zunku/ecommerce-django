@@ -32,7 +32,7 @@ class Product(models.Model):
     # auto_now=True Automatically saves the current date on this field
     last_update = models.DateTimeField(auto_now=True)
     # If the referenced class is after this one, you can pass it as a string
-    collection = models.ForeignKey('Collection', on_delete=models.PROTECT)
+    collection = models.ForeignKey('Collection', on_delete=models.PROTECT, related_name='product')
     
     # Defining a Many to Many relationship between two models
     # related_name allows you to change the name of the related class field. If you do this, you have to be consistent and change all the models related_name. It's better to stick with Django convention
@@ -129,7 +129,8 @@ class Collection(models.Model):
 class OrderItem(models.Model):
     # ForeignKey: It's a reference to another model, like say "this registry belongs to another one". Allows you to create a * to 1 relationship with the parent. Each Item saves an OrderID.
     order = models.ForeignKey(Order, on_delete=models.PROTECT)
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    # related_name Allow us to change the related name with another model
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='orderitem')
     quantity = models.PositiveSmallIntegerField()
     # Despite we already have the product price in the product model, we should always store the price of the product at the order time
     unit_price = models.DecimalField(max_digits=6, decimal_places=2)
