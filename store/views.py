@@ -6,33 +6,83 @@ from django.db.models.aggregates import Count
 from rest_framework import status
 # REST Framework comes with it's own Request and Response classes, that are simpler and powerful
 from rest_framework.decorators import api_view
+# Mixins are classes that encapsulate some patterns of code (Create, List, Retrive, Delete, Update)
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
+# Generic Views are common views that inherit from mixins
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
 # Serializing objects
-from .models import Product, Collection, Customer
-from .serializers import ProductSerializer, CollectionSerializer, CustomerSerializer
+from .models import Product, Collection, OrderItem, Review
+from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer
 
 # API RESTful Views
+# Filters
+# View Sets
+class ProductViewSet(ModelViewSet):
+    serializer_class = ProductSerializer
 
-# Class-based Views
-# Converting our Products View Funcions into a Class-based View
-class ProductList(APIView):
-    def get(self, request):
+    # Overwriting get_query to be able to filter products by collection
+    def get_queryset(self):
         queryset = Product.objects.select_related('collection').all()
-        serializer = ProductSerializer(
-            queryset, many=True, 
-            # HyperlinkedRelatedField requires the request in the serializer context, so we need to add context here
-            context={'request':request}
-            )
-        return Response(serializer.data)
+        # query_parms ?
+        # .get() returns None in case that the key don't exists
+        collection_id = self.request.query_params.get('collection_id')
+        if collection_id is not None:
+            queryset = queryset.filter(collection_id=collection_id)
 
-    def post(self, request):
-        serializer = ProductSerializer(data=request.data, context={'request':request})
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return queryset
+        
+    def get_serializer_context(self):
+        return {'request':self.request}
+    
+    # We have the delete method to this, because ModelViewSet need it 
+    # *args & **kwargs are used for a function to be able to recive aruguments without needed to know how many neither how much. Allow to overwrite methods without breakup
+    # *args posicional arguments
+    # **kwargs named arguments (dictionary)
+    def destroy(self, request, *args, **kwargs):
+        if OrderItem.objects.filter(product_id=kwargs['pk']).count() > 0:
+            return Response({'error': 'Product cannot be deleted because is associated with an order item.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        
+        return super().destroy(request, *args, **kwargs)
+
+# Creating Generic API Views (Old)
+# Only with this we can replace the get and post methods, and also creates a form to enter data in HTML in the Browsable API
+class ProductList(ListCreateAPIView):
+    
+    # Generic Views have queryset and serializer class atributes, that are better for simple useges
+    queryset = Product.objects.select_related('collection').all()
+    serializer_class = ProductSerializer
+    
+    # Generic Views Methods are better for complex usages, that need some logic
+    # def get_queryset(self):
+    #     return Product.objects.select_related('collection').all()
+    
+    # def get_serializer_class(self):
+    #     return ProductSerializer
+    
+    def get_serializer_context(self):
+        return {'request':self.request}
+
+    # # Class-based Views (Old)
+    # # Converting our Products View Funcions into a Class-based View
+# class ProductList(APIView):
+    # def get(self, request):
+    #     queryset = Product.objects.select_related('collection').all()
+    #     serializer = ProductSerializer(
+    #         queryset, many=True, 
+    #         # HyperlinkedRelatedField requires the request in the serializer context, so we need to add context here
+    #         context={'request':request}
+    #         )
+    #     return Response(serializer.data)
+
+    # def post(self, request):
+    #     serializer = ProductSerializer(data=request.data, context={'request':request})
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save()
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 # Old Product View Functions
@@ -64,21 +114,28 @@ def product_list(request):
         # A RESTFul convention is to return the object and HTTP 201 when creating an object
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-class ProductDetail(APIView):
-    def get(self, request, id):
-        product = get_object_or_404(Product,id=id)
-        serializer = ProductSerializer(product, context={'request':request})
-        return Response(serializer.data)
+# (Old)
+class ProductDetail(RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    # Change the parameter needed for calling the view, useful when you *really* need to change it
+    # lookup_field = 'id'
+    # Old get/set methods
+    # def get(self, request, id):
+    #     product = get_object_or_404(Product,id=id)
+    #     serializer = ProductSerializer(product, context={'request':request})
+    #     return Response(serializer.data)
     
-    def put(self, request, id):
-        product = get_object_or_404(Product,id=id)
-        serializer = ProductSerializer(product, data=request.data, context={'request':request})
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+    # def put(self, request, id):
+    #     product = get_object_or_404(Product,id=id)
+    #     serializer = ProductSerializer(product, data=request.data, context={'request':request})
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save()
+    #     return Response(serializer.data)
     
-    def delete(self, request, id):
-        product = get_object_or_404(Product,id=id)
+    # Customizing/Overwrite the delete Generic View Function
+    def delete(self, request, pk):
+        product = get_object_or_404(Product,pk=pk)
         if product.orderitem.count() > 0:
             return Response({'error': 'Product cannot be deleted because is associated with an order item.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
         product.delete()
@@ -117,47 +174,24 @@ def product_detail(request, id):
             return Response({'error': 'Product cannot be deleted because is associated with an order item.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-        
-@api_view()
-def customer_list(request):
-    queryset = Customer.objects.all()
-    serializer = CustomerSerializer(queryset, many=True)
-    return Response(serializer.data)
 
-# Excersise: Create a collecction endpoint that shows all the collection instances
-# Number of products in each collection
-# Allow to create a collection
-# A collection_detail endpoint that shows the collection details and allows to delete it and update it
+# If we only want a view set to read_only, we can use the ReadOnlyModelViewSet
+class CollectionViewSet(ModelViewSet):
+    queryset = Collection.objects.annotate(product_count=Count('product')).all()
+    serializer_class = CollectionSerializer
 
-@api_view(['GET', 'POST'])
-def collection_list(request):
-    if request.method == 'GET':
-        queryset = Collection.objects.annotate(product_count=Count('product'))
-        serializer = CollectionSerializer(queryset, many=True)
-        return Response(serializer.data)
-    elif request.method == 'POST':
-        serializer = CollectionSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-@api_view(['GET', 'PUT', 'DELETE'])
-def collection_detail(request, pk):
-    collection = get_object_or_404(Collection, pk=pk)
-    collection.product_count = Product.objects.filter(collection_id=pk).count()
-    if request.method == 'GET':
-        # Using get_object_or_404 for a short and more redable code. Much better than try/except
-        serializer = CollectionSerializer(collection)
-        return Response(serializer.data)
-    elif request.method == 'PUT':
-        serializer = CollectionSerializer(collection, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-    elif request.method == 'DELETE':
-        if collection.product.count() > 0:
+    def destroy(self, request, *args, **kwargs):
+        if Product.objects.filter(collection_id=kwargs['pk']).count() > 0:
             return Response({'error': 'Collection cannot be deleted because is associated with a product.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        collection.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return super().destroy(request, *args, **kwargs)
     
-# Mixins
+class ReviewViewSet(ModelViewSet):
+    serializer_class = ReviewSerializer
+    
+    def get_serializer_context(self, *args, **kwargs):
+        # In this case kwargs contain URL parameters
+        return {'product_id': self.kwargs['product_pk']}
+    
+    def get_queryset(self):
+        return Review.objects.filter(product_id=self.kwargs['product_pk'])

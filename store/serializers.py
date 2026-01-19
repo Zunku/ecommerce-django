@@ -2,7 +2,7 @@
 # Deserialization: convert JSON/dictionaries to model instances
 from rest_framework import serializers
 from decimal import Decimal
-from .models import Product, Collection, Customer
+from .models import Product, Collection, Customer, Review
 
 # It's not te best way to serialize, Model Serializers are better
 class WrongCollectionSerializer(serializers.Serializer):
@@ -23,7 +23,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'description', 'slug', 'inventory', 'price', 'price_with_tax', 'collection_id', 'collection_title', 'collection_object' ,'collection_link']
+        fields = ['id', 'title', 'description', 'slug', 'inventory', 'price', 'price_with_tax', 'collection_id','collection_title', 'collection_object' ,'collection_link']
     # Only return external representation information
     id = serializers.IntegerField(read_only=True)
     # We still have to add atributes like max_lenght because later we will use serializers when receiving data to our API
@@ -42,16 +42,15 @@ class ProductSerializer(serializers.ModelSerializer):
         source='collection'
     )
     # Accesing to the string representation of a related object
-    collection_title = serializers.StringRelatedField(source='collection', required=False)
+    collection_title = serializers.StringRelatedField(source='collection', read_only=True)
     # Nesting the collection object
-    collection_object = CollectionSerializer(source='collection', required=False)
+    collection_object = CollectionSerializer(source='collection', read_only=True)
     # Generating hyperlinks of a related object
     collection_link = serializers.HyperlinkedRelatedField(
         source='collection',
         queryset= Collection.objects.all(),
         # name of the view in urls.py
         view_name='collection-detail',
-        # required makes this field not obligatory for POST Methods
         required=False
     )
     
@@ -60,14 +59,14 @@ class ProductSerializer(serializers.ModelSerializer):
     def calculate_tax(self, product:Product):
         return product.unit_price * Decimal(1.1)
 
-    # Overwrighting create() method. This method takes the validated_data and creates a new field "other". It's called by the save() method if we try to create a new product
+    # Overwriting create() method. This method takes the validated_data and creates a new field "other". It's called by the save() method if we try to create a new product
     # def create(self, validated_data):
     #     product = Product(**validated_data)
     #     product.other = 1
     #     product.save()
     #     return product
     
-    # Overwrighing the update() method. It's called by the save() method when trying to update
+    # Overwriting the update() method. It's called by the save() method when trying to update
     # def update(self, instance, validated_data):
     #     instance.unit_price = validated_data.get('unit_price')
     #     instance.save()
@@ -89,8 +88,20 @@ class CustomerSerializer(serializers.ModelSerializer):
         return f"{customer.first_name} {customer.last_name}"
     
     # Validation between fields
-    # We are overwrighting the validate method
+    # We are overwriting the validate method, in this case makes no senses, just an example
     def validate(self, data):
         if data['password'] != data['confirm_passowrd']:
             return serializers.ValidationError('Passwords do not match')
         return data
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['id', 'date', 'title', 'description', 'name']
+    
+    # Customizing how a field is created
+    # Overwriting create() method to change how the review field is created
+    def create(self, validated_data):
+        validated_data['product_id'] = self.context['product_id']
+        # With super() we can use the parent method, so practicaly we are extending the class with our logic, not totally replacing it
+        return super().create(validated_data)
