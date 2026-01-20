@@ -16,7 +16,7 @@ class TagInline(GenericTabularInline):
 
 # Extending Pluggable Apps
 # It's importat that each class mantain independency, so any class should know anything about another one
-# That's way we need to create a new app called "store_custom" who is gonna know about the two apps
+# That's why we need to create a new app called "store_custom" who is gonna know about the two apps
 
 # Creating a custom admin
 class CustomProductAdmin(ProductAdmin):

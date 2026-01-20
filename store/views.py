@@ -1,11 +1,17 @@
 # Shortcut to
 from django.shortcuts import get_object_or_404
 from django.db.models.aggregates import Count
+# Djangofilters library
+from django_filters.rest_framework import DjangoFilterBackend
 
 # HTTP status code
 from rest_framework import status
 # REST Framework comes with it's own Request and Response classes, that are simpler and powerful
 from rest_framework.decorators import api_view
+# Searching, Ordering
+from rest_framework.filters import SearchFilter, OrderingFilter
+# Pagination
+from rest_framework.pagination import PageNumberPagination
 # Mixins are classes that encapsulate some patterns of code (Create, List, Retrive, Delete, Update)
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 # Generic Views are common views that inherit from mixins
@@ -14,26 +20,38 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-# Serializing objects
+# Our app
 from .models import Product, Collection, OrderItem, Review
 from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer
+from .filters import ProductFilter
 
 # API RESTful Views
-# Filters
 # View Sets
 class ProductViewSet(ModelViewSet):
+    queryset = Product.objects.select_related('collection').all()
     serializer_class = ProductSerializer
-
+    # Generic Filters, beside giving us generic filters, also implement a button to change between filters
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    # We only have to choose the fields we want to filter (Old)
+    filterset_fields = ['collection_id']
+    # Custom Filters - Djangofilters include a lot of prebuild filtering backends
+    filterset_class = ProductFilter
+    # Searching - Django restframework give us a backend for seach for words
+    # Also we can search for later classes like collection__title
+    search_fields = ['title', 'description']
+    # Ordering - Django restframework give us a backend for ordering by fields
+    ordering_fields = ['unit_price', 'title', 'last_update']
+    # Filters (Old)
     # Overwriting get_query to be able to filter products by collection
-    def get_queryset(self):
-        queryset = Product.objects.select_related('collection').all()
-        # query_parms ?
-        # .get() returns None in case that the key don't exists
-        collection_id = self.request.query_params.get('collection_id')
-        if collection_id is not None:
-            queryset = queryset.filter(collection_id=collection_id)
+    # def get_queryset(self):
+    #     queryset = Product.objects.select_related('collection').all()
+    #     # query_parms ?
+    #     # .get() returns None in case that the key don't exists
+    #     collection_id = self.request.query_params.get('collection_id')
+    #     if collection_id is not None:
+    #         queryset = queryset.filter(collection_id=collection_id)
 
-        return queryset
+    #     return queryset
         
     def get_serializer_context(self):
         return {'request':self.request}
