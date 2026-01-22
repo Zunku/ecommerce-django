@@ -222,7 +222,7 @@ class CartViewSet(ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
     
-class CartItemSet(ModelViewSet):
+class CartItemViewSet(ModelViewSet):
     serializer_class = CartItemSerializer
     
     def get_serializer_context(self, *args, **kwargs):
