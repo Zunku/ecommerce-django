@@ -2,7 +2,7 @@
 # Deserialization: convert JSON/dictionaries to model instances
 from rest_framework import serializers
 from decimal import Decimal
-from .models import Product, Collection, Customer, Review
+from .models import Product, Collection, Customer, Review, Cart, CartItem
 
 # It's not te best way to serialize, Model Serializers are better
 class WrongCollectionSerializer(serializers.Serializer):
@@ -100,8 +100,30 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'date', 'title', 'description', 'name']
     
     # Customizing how a field is created
-    # Overwriting create() method to change how the review field is created
+    # Overwriting create() method to change how the review field is created to add product_id when creating the review
     def create(self, validated_data):
         validated_data['product_id'] = self.context['product_id']
         # With super() we can use the parent method, so practicaly we are extending the class with our logic, not totally replacing it
+        return super().create(validated_data)
+    
+class CartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ['id', 'created_at']
+        
+class CartItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartItem
+        fields = ['id', 'product_id', 'cart_id', 'quantity']
+        
+    
+    product_id = serializers.PrimaryKeyRelatedField(
+    # Need a queryset for looking for the related object (collection)
+    queryset=Product.objects.all(),
+    source='product'
+    )
+    
+    def create(self, validated_data):
+        validated_data['cart_id'] = self.context['cart_id']
+        
         return super().create(validated_data)

@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 # Searching, Ordering
 from rest_framework.filters import SearchFilter, OrderingFilter
-# Pagination
+# Pagination default
 from rest_framework.pagination import PageNumberPagination
 # Mixins are classes that encapsulate some patterns of code (Create, List, Retrive, Delete, Update)
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
@@ -21,21 +21,24 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 # Our app
-from .models import Product, Collection, OrderItem, Review
-from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer
+from .models import Product, Collection, OrderItem, Review, Cart, CartItem
+from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartItemSerializer, CartSerializer
 from .filters import ProductFilter
+from .pagination import DefaultPagination
 
 # API RESTful Views
 # View Sets
 class ProductViewSet(ModelViewSet):
     queryset = Product.objects.select_related('collection').all()
     serializer_class = ProductSerializer
-    # Generic Filters, beside giving us generic filters, also implement a button to change between filters
+    # Generic Filters/Backend, beside giving us generic filters, also implement a button to change between filters
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     # We only have to choose the fields we want to filter (Old)
     filterset_fields = ['collection_id']
     # Custom Filters - Djangofilters include a lot of prebuild filtering backends
     filterset_class = ProductFilter
+    # Pagination - Default page size is specified on settings.py/REST_FRAMEWORK
+    pagination_class = DefaultPagination
     # Searching - Django restframework give us a backend for seach for words
     # Also we can search for later classes like collection__title
     search_fields = ['title', 'description']
@@ -68,11 +71,11 @@ class ProductViewSet(ModelViewSet):
 
 # Creating Generic API Views (Old)
 # Only with this we can replace the get and post methods, and also creates a form to enter data in HTML in the Browsable API
-class ProductList(ListCreateAPIView):
+# class ProductList(ListCreateAPIView):
     
     # Generic Views have queryset and serializer class atributes, that are better for simple useges
-    queryset = Product.objects.select_related('collection').all()
-    serializer_class = ProductSerializer
+    # queryset = Product.objects.select_related('collection').all()
+    # serializer_class = ProductSerializer
     
     # Generic Views Methods are better for complex usages, that need some logic
     # def get_queryset(self):
@@ -81,8 +84,8 @@ class ProductList(ListCreateAPIView):
     # def get_serializer_class(self):
     #     return ProductSerializer
     
-    def get_serializer_context(self):
-        return {'request':self.request}
+    # def get_serializer_context(self):
+    #     return {'request':self.request}
 
     # # Class-based Views (Old)
     # # Converting our Products View Funcions into a Class-based View
@@ -209,7 +212,21 @@ class ReviewViewSet(ModelViewSet):
     
     def get_serializer_context(self, *args, **kwargs):
         # In this case kwargs contain URL parameters
+        # In the URL is defined with the  lookup parameter, and a _pk is added automaticaly
         return {'product_id': self.kwargs['product_pk']}
     
     def get_queryset(self):
         return Review.objects.filter(product_id=self.kwargs['product_pk'])
+    
+class CartViewSet(ModelViewSet):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+    
+class CartItemSet(ModelViewSet):
+    serializer_class = CartItemSerializer
+    
+    def get_serializer_context(self, *args, **kwargs):
+        return {'cart_id': self.kwargs['cart_pk']}
+    
+    def get_queryset(self):
+        return CartItem.objects.filter(cart_id=self.kwargs['cart_pk']).select_related('product')

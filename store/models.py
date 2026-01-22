@@ -137,12 +137,12 @@ class OrderItem(models.Model):
 
 
 class Cart(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateField(auto_now_add=True)
     
 # Creating and association class. A class that represent the atributes that will have the association between two classes
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='cart')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product')
     quantity = models.PositiveSmallIntegerField()
     
 class Review(models.Model):

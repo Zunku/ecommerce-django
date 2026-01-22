@@ -14,13 +14,16 @@ router = DefaultRouter()
 # # register('prefix',ViewSet) Here we can choose the endpoint prefix for our view
 router.register('products', views.ProductViewSet, basename='products')
 router.register('collections', views.CollectionViewSet)
+router.register('carts', views.CartViewSet)
 
+# Nesting routes
 # (parent_router, 'parent prefix', parameter_name)
 products_router = routers.NestedDefaultRouter(router, 'products', lookup='product')
+cart_items_router = routers.NestedDefaultRouter(router, 'carts', lookup='cart')
 # Registering child resources ('prefix', ViewSet, prefix_for_urlpatterns) basename: used to generate URL patterns ex: product-review-list, product-review-detail
 products_router.register('reviews', views.ReviewViewSet, basename='product-reviews')
-# Nesting routes
-urlpatterns = router.urls + products_router.urls
+cart_items_router.register('cart-items', views.CartItemSet, basename='cart-items')
+urlpatterns = router.urls + products_router.urls + cart_items_router.urls
 
 # Adding extra routes to our urlpatterns
 # urlpatterns = [
