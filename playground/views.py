@@ -151,6 +151,7 @@ def sort_limit(request):
     # Related tables
     # select_related(1) Index a related table and makes a inner join, for relations -:1 with parent
     # To access that filed in templates you need to product.collection.title for example
+    # Useful when you want to show the complete table, but the object itself is already related
     query_set5 = Product.objects.select_related('collection').all()
     
     # prefetch_related(n) Index a related table, for relations -:n with parent
@@ -166,13 +167,13 @@ def sort_limit(request):
 
 def aggregate_func(request):
     
-    # Aggregate functions
+    # Aggregate functions. Takes each column and return a unique calculation in a dictionary per column 
     # Count all the fields of that column that are not null, returns a dictionary
     # We can pass a keyword argument to rename the dictionary key
     result = Product.objects.aggregate(count=Count('id'), min_price=Min('unit_price'))
     
     # Annotating objects
-    # .annotate() Add a new field to the table, newfieldname = value
+    # .annotate() Add a new field to the table, newfieldname = value. Returns the same quantity of rows/records
     # Value() Is an expression that allow us to use Values
     # It not saves the query in the database
     queryset1 = Customer.objects.annotate(is_new=Value(True))
@@ -198,7 +199,7 @@ def aggregate_func(request):
     # Grouping data
     # Grouping orders by customers using Count()
     queryset5 = Customer.objects.annotate(
-        # When you use an aggregate funcion inside an annotate() it automaticaly group 
+        # When you use an aggregate function inside an annotate() it automaticaly group 
         # With Count() if we want to use a reverse relation ship, you don't have to use fieldname_set, just fieldname
         orders_count=Count('order')
     )
@@ -252,7 +253,7 @@ def transactions(request):
     
     print('This code is not inside the transaction')
     # Transactions
-    # A way to make several changes on our database in an anomic way, meaning all changes should be saved togheter. If one changes fails then all changes should be rolled back. Excelet for orders with items for example, it avoid a lot of bugs and inconsistenties.
+    # A way to make several changes on our database in an atomic way, meaning all changes should be saved togheter. If one changes fails then all changes should be rolled back. Excelet for orders with items for example, it avoid a lot of bugs and inconsistenties.
     # In relatinoal datababases, we should alawys creater the father before the child
     
     # If we want more control over code that will be inside the transaction we can use with. We don't need the decorator. Returns a context manager

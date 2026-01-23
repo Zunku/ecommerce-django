@@ -1,6 +1,7 @@
 # Shortcut to
 from django.shortcuts import get_object_or_404
-from django.db.models.aggregates import Count
+from django.db.models.aggregates import Count, Sum
+from django.db.models import F, ExpressionWrapper, DecimalField
 # Djangofilters library
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -13,12 +14,12 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 # Pagination default
 from rest_framework.pagination import PageNumberPagination
 # Mixins are classes that encapsulate some patterns of code (Create, List, Retrive, Delete, Update)
-from rest_framework.mixins import ListModelMixin, CreateModelMixin
+from rest_framework.mixins import CreateModelMixin, DestroyModelMixin, RetrieveModelMixin, ListModelMixin
 # Generic Views are common views that inherit from mixins
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 # Our app
 from .models import Product, Collection, OrderItem, Review, Cart, CartItem
@@ -28,6 +29,7 @@ from .pagination import DefaultPagination
 
 # API RESTful Views
 # View Sets
+# ModelViewSet is just a combination of all the Mixins
 class ProductViewSet(ModelViewSet):
     queryset = Product.objects.select_related('collection').all()
     serializer_class = ProductSerializer
@@ -218,15 +220,11 @@ class ReviewViewSet(ModelViewSet):
     def get_queryset(self):
         return Review.objects.filter(product_id=self.kwargs['product_pk'])
     
-class CartViewSet(ModelViewSet):
+# Here we don't want the PUT neither the LIST method, so we are going to use a GenericViewSet, and use separated Mixins
+class CartViewSet(CreateModelMixin, GenericViewSet, DestroyModelMixin, RetrieveModelMixin):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
-    
+
 class CartItemViewSet(ModelViewSet):
     serializer_class = CartItemSerializer
-    
-    def get_serializer_context(self, *args, **kwargs):
-        return {'cart_id': self.kwargs['cart_pk']}
-    
-    def get_queryset(self):
-        return CartItem.objects.filter(cart_id=self.kwargs['cart_pk']).select_related('product')
+    queryset = CartItem.objects.all()

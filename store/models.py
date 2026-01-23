@@ -27,6 +27,7 @@ class Product(models.Model):
                                      # Data Validation
                                      # Here you can put your validators, (minvalue, message=optional)
                                      validators=[MinValueValidator(1)])
+    
     inventory = models.IntegerField(validators=[MinValueValidator(1)])
     # To storing the date of the last object update
     # auto_now=True Automatically saves the current date on this field

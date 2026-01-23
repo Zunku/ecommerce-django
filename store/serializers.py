@@ -1,3 +1,6 @@
+from django.db.models import F, ExpressionWrapper, DecimalField
+from django.db.models.aggregates import Sum
+
 # Serializers are objects that convert model instances to dictionaries/JSON and vice versa
 # Deserialization: convert JSON/dictionaries to model instances
 from rest_framework import serializers
@@ -28,7 +31,7 @@ class ProductSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     # We still have to add atributes like max_lenght because later we will use serializers when receiving data to our API
     title = serializers.CharField(max_length=255)
-    # source Django asumes that the serializer fields will match the models fields, if not, you need to use this parameter to indicate the model field source, but is not a good practice changing field names bc you are breaking consistency
+    # source Django asumes that serializer fields/atributes will match models fields/atributes, if not, you need to use this parameter to indicate the model field/atributes source, but is not a good practice changing field names bc you are breaking consistency
     price = serializers.DecimalField(max_digits=6, decimal_places=2, source='unit_price')
     
     # Custom Serializer Method Field
@@ -79,7 +82,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
-        # fields that we want to inherit form the model/new fields
+        # fields that we want to inherit form the model, and new fields
         # Djando first look for this fields in the model, if it don't find any, he will then look for it in the serializer
         fields = ['id', 'first_name', 'last_name', 'full_name']
     full_name = serializers.SerializerMethodField(method_name='getting_full_name')
@@ -106,24 +109,39 @@ class ReviewSerializer(serializers.ModelSerializer):
         # With super() we can use the parent method, so practicaly we are extending the class with our logic, not totally replacing it
         return super().create(validated_data)
     
-class CartSerializer(serializers.ModelSerializer):
+# Creating another serializer for product to show only some fields when getting a cart object
+class SimpleProductSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Cart
-        fields = ['id', 'created_at']
+        model = Product
+        fields = ['id', 'title', 'unit_price']
         
 class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
-        fields = ['id', 'product_id', 'cart_id', 'quantity']
+        fields = ['id', 'product', 'quantity', 'total_item_price']
         
+    total_item_price = serializers.SerializerMethodField(method_name='calc_total_item_price')
+    product = SimpleProductSerializer()
     
-    product_id = serializers.PrimaryKeyRelatedField(
-    # Need a queryset for looking for the related object (collection)
-    queryset=Product.objects.all(),
-    source='product'
-    )
+    def calc_total_item_price(self, cart_item:CartItem):
+        # cart_item.product 
+        return cart_item.quantity * cart_item.product.unit_price
     
-    def create(self, validated_data):
-        validated_data['cart_id'] = self.context['cart_id']
-        
-        return super().create(validated_data)
+class CartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ['id', 'items', 'total_price']
+    
+    # Defining static model atributes 
+    id = serializers.UUIDField(read_only=True)
+    total_price = serializers.SerializerMethodField(method_name='cal_total_price')
+    # Here the serializer looks for a relation, not the ID. The atribute is created based on CartItem.objects.filter(cart=cart)
+    items = CartItemSerializer(many=True, read_only=True)
+
+    
+    def cal_total_price(self, cart:Cart):
+        # A select related('product') is not needed because the object itself is already related with products
+        total_price = cart.items. \
+        annotate(total_price_item=ExpressionWrapper(F('quantity')*F('product__unit_price'), output_field=DecimalField())). \
+        aggregate(Sum('total_price_item'))
+        return total_price['total_price_item__sum']
