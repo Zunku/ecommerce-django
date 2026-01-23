@@ -1,7 +1,7 @@
 from django.db import models
 # Module for Data Validation
 from django.core.validators import MinValueValidator
-
+from uuid import uuid4
 class Promotion(models.Model):
     description = models.CharField(max_length=255)
     discount = models.FloatField()
@@ -137,14 +137,29 @@ class OrderItem(models.Model):
 
 
 class Cart(models.Model):
+    # GUID: Globally Unique Identifier. Are an unique ID of 32 characters that help to avoid hackers access to our URLs, using simple IDs it's ultra easy for a third party to access these endpoints
+    # default=uuid4 Here the uuid is randomdly created, we are passing just a reference to that funcion, not calling it because that way we are gona hardcode our migration
+    # The disadvantage is that it will be 3 times heavy (32 bytes) that a simple ID (8 bytes). And this ID is also stored on CartItemID, so it will be n of OrderItems heavier
+    # But cart's will be temporals, are not gona grow indefinitly, and making calculations, 1 million of records only storage 45 MB extra. It's not a big impact.
+    # Cart's will be anonymus and public, a new client can make a cart without an account, that's why GUID are necesary, but as people place orders, we are gonna move this records to Order and OrderItem tables, in those tables we are not gonna use GUIDs, because the Orders API is gonna be secure and not open to anonymous users, a client has to autenticate and be autorized to acces a particular order
+    # Also searching for a GUID is a bit slower that searching for an ID, but remember, premature optimization is the root of all evils
+    # You have to choose the id dtype from the begining, you can't change it in middle of the developing
+    # So, you have to think every decision based on this kind of things
+    id = models.UUIDField(primary_key=True, default=uuid4)
     created_at = models.DateField(auto_now_add=True)
     
 # Creating and association class. A class that represent the atributes that will have the association between two classes
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='cart')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product')
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='items')
     quantity = models.PositiveSmallIntegerField()
     
+    class Meta:
+        # Unique constraint
+        # We want to make sure we only have a single instance of a product in our shoping cart. If the client add the same product to the same cart multiple times, we don't want to create another CartItem instance, instead, we want to increase the quantity
+        # Here we can have multiples unique constraints on diferent fields, on each list we can add add a constraint
+        unique_together = [['cart', 'product']]
+        
 class Review(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
