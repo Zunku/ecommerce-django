@@ -151,15 +151,16 @@ class Cart(models.Model):
     
 # Creating and association class. A class that represent the atributes that will have the association between two classes
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='items')
-    quantity = models.PositiveSmallIntegerField()
-    
     class Meta:
         # Unique constraint
         # We want to make sure we only have a single instance of a product in our shoping cart. If the client add the same product to the same cart multiple times, we don't want to create another CartItem instance, instead, we want to increase the quantity
         # Here we can have multiples unique constraints on diferent fields, on each list we can add add a constraint
         unique_together = [['cart', 'product']]
+    
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='items')
+    quantity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
+    
         
 class Review(models.Model):
     title = models.CharField(max_length=255)

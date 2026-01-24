@@ -1,7 +1,7 @@
 from django.db.models import F, ExpressionWrapper, DecimalField
 from django.db.models.aggregates import Sum
 
-# Serializers are objects that convert model instances to dictionaries/JSON and vice versa
+# Serializers are classes that convert model instances to dictionaries/JSON and vice versa
 # Deserialization: convert JSON/dictionaries to model instances
 from rest_framework import serializers
 from decimal import Decimal
@@ -35,10 +35,10 @@ class ProductSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=6, decimal_places=2, source='unit_price')
     
     # Custom Serializer Method Field
-    price_with_tax = serializers.SerializerMethodField(method_name='calculate_tax')
+    price_with_tax = serializers.SerializerMethodField(method_name='get_price_tax')
     
     # Serializing Relationships
-    # Accesing the PK of a related object, the most common way
+    # Accesing the PK of a related object, the most common way. This way we can select the product from a list in the Browsable API
     collection_id = serializers.PrimaryKeyRelatedField(
         # Need a queryset for looking for the related object (collection)
         queryset=Collection.objects.all(),
@@ -59,7 +59,7 @@ class ProductSerializer(serializers.ModelSerializer):
     
     # Method that will be passed to SerializerMethodField, to create a Custom Serializer Field
     # If we annotate parameters with it's corresponsant type, we will get intelisense
-    def calculate_tax(self, product:Product):
+    def get_price_tax(self, product:Product):
         return product.unit_price * Decimal(1.1)
 
     # Overwriting create() method. This method takes the validated_data and creates a new field "other". It's called by the save() method if we try to create a new product
@@ -85,9 +85,9 @@ class CustomerSerializer(serializers.ModelSerializer):
         # fields that we want to inherit form the model, and new fields
         # Djando first look for this fields in the model, if it don't find any, he will then look for it in the serializer
         fields = ['id', 'first_name', 'last_name', 'full_name']
-    full_name = serializers.SerializerMethodField(method_name='getting_full_name')
+    full_name = serializers.SerializerMethodField(method_name='get_full_name')
     
-    def getting_full_name(self, customer:Customer):
+    def get_full_name(self, customer:Customer):
         return f"{customer.first_name} {customer.last_name}"
     
     # Validation between fields
@@ -120,12 +120,53 @@ class CartItemSerializer(serializers.ModelSerializer):
         model = CartItem
         fields = ['id', 'product', 'quantity', 'total_item_price']
         
-    total_item_price = serializers.SerializerMethodField(method_name='calc_total_item_price')
+    total_item_price = serializers.SerializerMethodField(method_name='get_total_item_price')
     product = SimpleProductSerializer()
     
-    def calc_total_item_price(self, cart_item:CartItem):
+    def get_total_item_price(self, cart_item:CartItem):
         # cart_item.product 
         return cart_item.quantity * cart_item.product.unit_price
+
+# Serializer for creating a cartitem, without innecesary fields
+class AddCartItemSerializer(serializers.ModelSerializer):
+    # Orden matters, if you put product_id after Meta class, it will not work
+    product_id = serializers.PrimaryKeyRelatedField(
+        # Need a queryset for looking for the related object
+        queryset=Product.objects.all(),
+        source='product'
+    )
+    # product_id = serializers.IntegerField()
+    class Meta:
+        model = CartItem
+        fields = ['id', 'product_id', 'quantity']
+
+    # Overwriting avoid creating items for repetead products, and instead, update the quantity
+    def save(self, **kwargs):
+        cart_id = self.context['cart_id']
+        product_id = self.validated_data['product']
+        quantity = self.validated_data['quantity']
+        try:
+            # Updating existing item
+            cart_item = CartItem.objects.get(cart_id=cart_id, product_id=product_id)
+            cart_item.quantity += quantity
+            cart_item.save()
+            self.instance = cart_item
+        except CartItem.DoesNotExist:
+            # Creating a new item
+            # ** Unpack a dictionary
+            self.instance = CartItem.objects.create(cart_id=cart_id, **self.validated_data)
+        return self.instance
+    
+    # Custom validator, it's a naming convention/contract to start validation methods with validate_
+    # For each field, Django looks for a method with validate_<field_name> and calls it automaticaly
+    # if hasattr(self, f'validate_{field_name}') hasattr looks if the object has a specified method
+    # value = getattr(self, method_name)(value) # getattr get the method by it's name, pass the value, execute it and replace value
+    # This is called Naming Convention or Naming Contract
+    # Value is the POST product_id
+    def validate_product_id(self, value):
+        if not Product.objects.filter(pk=value.id).exists():
+            raise serializers.ValidationError('No product with the given ID was found')
+        return value.id
     
 class CartSerializer(serializers.ModelSerializer):
     class Meta:
@@ -134,14 +175,19 @@ class CartSerializer(serializers.ModelSerializer):
     
     # Defining static model atributes 
     id = serializers.UUIDField(read_only=True)
-    total_price = serializers.SerializerMethodField(method_name='cal_total_price')
+    total_price = serializers.SerializerMethodField(method_name='get_total_price')
     # Here the serializer looks for a relation, not the ID. The atribute is created based on CartItem.objects.filter(cart=cart)
     items = CartItemSerializer(many=True, read_only=True)
 
-    
-    def cal_total_price(self, cart:Cart):
+    # Is a convention to start the method with get_ when declaring for SerializerMethodField
+    def get_total_price(self, cart:Cart):
         # A select related('product') is not needed because the object itself is already related with products
         total_price = cart.items. \
         annotate(total_price_item=ExpressionWrapper(F('quantity')*F('product__unit_price'), output_field=DecimalField())). \
         aggregate(Sum('total_price_item'))
         return total_price['total_price_item__sum']
+    
+    # A much more easy way using a list comprehension
+    def get_total_price_easy(self, cart:Cart):
+        totals_items_prices = [item.quantity * item.product.unit_price for item in cart.items.all()]
+        return sum(totals_items_prices)

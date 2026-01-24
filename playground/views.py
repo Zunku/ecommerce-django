@@ -49,6 +49,7 @@ def manager_objects(request):
     query_set = Product.objects.all()
     
     # Evaluating query_set, indexing all elementos from Product table
+    # Each product is an instance of Product model
     for product in query_set:
         print(product)
         
@@ -151,11 +152,12 @@ def sort_limit(request):
     # Related tables
     # select_related(1) Index a related table and makes a inner join, for relations -:1 with parent
     # To access that filed in templates you need to product.collection.title for example
-    # Useful when you want to show the complete table, but the object itself is already related
+    # Useful when you need to eager load tables or fields
     query_set5 = Product.objects.select_related('collection').all()
     
     # prefetch_related(n) Index a related table, for relations -:n with parent
     # Makes two querys, one for indexing the first table, and the other one the related table
+    # Useful when you need to eager load tables or fields
     query_set6 = Product.objects.prefetch_related('promotions').all()
     
     # Get the last 5 orders with their customer and items (including products)

@@ -1,7 +1,6 @@
 # Shortcut to
 from django.shortcuts import get_object_or_404
-from django.db.models.aggregates import Count, Sum
-from django.db.models import F, ExpressionWrapper, DecimalField
+from django.db.models.aggregates import Count
 # Djangofilters library
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -11,21 +10,21 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 # Searching, Ordering
 from rest_framework.filters import SearchFilter, OrderingFilter
+# Generic Views are common views that inherit from mixins
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 # Pagination default
 from rest_framework.pagination import PageNumberPagination
 # Mixins are classes that encapsulate some patterns of code (Create, List, Retrive, Delete, Update)
 from rest_framework.mixins import CreateModelMixin, DestroyModelMixin, RetrieveModelMixin, ListModelMixin
-# Generic Views are common views that inherit from mixins
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 # Our app
-from .models import Product, Collection, OrderItem, Review, Cart, CartItem
-from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartItemSerializer, CartSerializer
 from .filters import ProductFilter
+from .models import Product, Collection, OrderItem, Review, Cart, CartItem
 from .pagination import DefaultPagination
+from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartItemSerializer, CartSerializer, AddCartItemSerializer
 
 # API RESTful Views
 # View Sets
@@ -221,10 +220,25 @@ class ReviewViewSet(ModelViewSet):
         return Review.objects.filter(product_id=self.kwargs['product_pk'])
     
 # Here we don't want the PUT neither the LIST method, so we are going to use a GenericViewSet, and use separated Mixins
-class CartViewSet(CreateModelMixin, GenericViewSet, DestroyModelMixin, RetrieveModelMixin):
-    queryset = Cart.objects.all()
+class CartViewSet(CreateModelMixin, 
+                  GenericViewSet, 
+                  DestroyModelMixin, 
+                  RetrieveModelMixin):
+    # Eager loading items and product to avoid generating extra queries
+    queryset = Cart.objects.prefetch_related('items__product').all()
     serializer_class = CartSerializer
 
 class CartItemViewSet(ModelViewSet):
     serializer_class = CartItemSerializer
-    queryset = CartItem.objects.all()
+    
+    def get_queryset(self):
+        return CartItem.objects.filter(cart_id=self.kwargs['cart_pk']).select_related('product')
+    
+    def get_serializer_class(self):
+        # This way we can separate methods by HTTP methods
+        if self.request.method == 'POST':
+            return AddCartItemSerializer
+        return CartItemSerializer
+    
+    def get_serializer_context(self):
+        return {'cart_id': self.kwargs['cart_pk']}
