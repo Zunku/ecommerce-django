@@ -24,7 +24,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from .filters import ProductFilter
 from .models import Product, Collection, OrderItem, Review, Cart, CartItem
 from .pagination import DefaultPagination
-from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartItemSerializer, CartSerializer, AddCartItemSerializer
+from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartItemSerializer, CartSerializer, AddCartItemSerializer, UpdateCartItemSerializer
 
 # API RESTful Views
 # View Sets
@@ -56,7 +56,6 @@ class ProductViewSet(ModelViewSet):
     #         queryset = queryset.filter(collection_id=collection_id)
 
     #     return queryset
-        
     def get_serializer_context(self):
         return {'request':self.request}
     
@@ -90,6 +89,7 @@ class ProductViewSet(ModelViewSet):
 
     # # Class-based Views (Old)
     # # Converting our Products View Funcions into a Class-based View
+
 # class ProductList(APIView):
     # def get(self, request):
     #     queryset = Product.objects.select_related('collection').all()
@@ -154,6 +154,7 @@ class ProductDetail(RetrieveUpdateDestroyAPIView):
     #     serializer.is_valid(raise_exception=True)
     #     serializer.save()
     #     return Response(serializer.data)
+    
     
     # Customizing/Overwrite the delete Generic View Function
     def delete(self, request, pk):
@@ -229,15 +230,19 @@ class CartViewSet(CreateModelMixin,
     serializer_class = CartSerializer
 
 class CartItemViewSet(ModelViewSet):
-    serializer_class = CartItemSerializer
+    # Special atribute to determine the allowed http methods, have to be in lowercase 
+    http_method_names = ['get', 'post', 'patch', 'delete']
     
     def get_queryset(self):
         return CartItem.objects.filter(cart_id=self.kwargs['cart_pk']).select_related('product')
     
+    # Here we determine which serializer are we going to use depending on the HTTP method
     def get_serializer_class(self):
         # This way we can separate methods by HTTP methods
         if self.request.method == 'POST':
             return AddCartItemSerializer
+        if self.request.method == 'PATCH':
+            return UpdateCartItemSerializer
         return CartItemSerializer
     
     def get_serializer_context(self):

@@ -130,12 +130,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 # Serializer for creating a cartitem, without innecesary fields
 class AddCartItemSerializer(serializers.ModelSerializer):
     # Orden matters, if you put product_id after Meta class, it will not work
-    product_id = serializers.PrimaryKeyRelatedField(
-        # Need a queryset for looking for the related object
-        queryset=Product.objects.all(),
-        source='product'
-    )
-    # product_id = serializers.IntegerField()
+    product_id = serializers.IntegerField()
     class Meta:
         model = CartItem
         fields = ['id', 'product_id', 'quantity']
@@ -143,7 +138,7 @@ class AddCartItemSerializer(serializers.ModelSerializer):
     # Overwriting avoid creating items for repetead products, and instead, update the quantity
     def save(self, **kwargs):
         cart_id = self.context['cart_id']
-        product_id = self.validated_data['product']
+        product_id = self.validated_data['product_id']
         quantity = self.validated_data['quantity']
         try:
             # Updating existing item
@@ -164,10 +159,16 @@ class AddCartItemSerializer(serializers.ModelSerializer):
     # This is called Naming Convention or Naming Contract
     # Value is the POST product_id
     def validate_product_id(self, value):
-        if not Product.objects.filter(pk=value.id).exists():
+        if not Product.objects.filter(pk=value).exists():
             raise serializers.ValidationError('No product with the given ID was found')
-        return value.id
+        return value
     
+# Serializer to limit fields when updating a cart item
+class UpdateCartItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartItem
+        fields = ['quantity']
+        
 class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
