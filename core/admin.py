@@ -1,10 +1,17 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.contenttypes.admin import GenericTabularInline
 from store.admin import ProductAdmin
 from tags.models import TaggedItem
 from store.models import Product
 
+from .models import User
 # We need to add the app to settings.py
+
+# Registering admin model to managing our users
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    pass
 
 # Using Generic Relationships
 # Class for managing Tags
