@@ -215,14 +215,15 @@ def aggregate_func(request):
     
     # Custom manager, returns the tags for the specified object and ID
     # For some reason intelisense don't work, but it still works
+    # Indexing tags for product with product_id = 1
     queryset7 = TaggedItem.objects.get_tags_for(Product, 1)
 
-    # Creating Objects/Insert
-    collection = Collection()
-    collection.title = 'Sports'
-    collection.featured_product = Product(pk=2)
-    # Every model have a method save insert a new record in our database
-    collection.save()
+    # # Creating Objects/Insert
+    # collection = Collection()
+    # collection.title = 'Sports'
+    # collection.featured_product = Product(pk=2)
+    # # Every model have a method save insert a new record in our database
+    # collection.save()
     
     return render(request, 'aggregate_func.html', {'name': 'Daniel', 'result': queryset7})
 

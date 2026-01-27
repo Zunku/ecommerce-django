@@ -8,7 +8,7 @@ from store.models import Product
 from .models import User
 # We need to add the app to settings.py
 
-# Registering admin model to managing our users
+# Registering admin with the new extended User model
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     pass
@@ -20,10 +20,9 @@ class TagInline(GenericTabularInline):
     autocomplete_fields = ['tag']
     model = TaggedItem
 
-
 # Extending Pluggable Apps
 # It's importat that each class mantain independency, so any class should know anything about another one
-# That's why we need to create a new app called "store_custom" who is gonna know about the two apps
+# That's why we need to create a new app called "core" who is gonna know about the two apps
 
 # Creating a custom admin
 class CustomProductAdmin(ProductAdmin):

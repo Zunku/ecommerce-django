@@ -7,21 +7,19 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 # Custom Manager
 # Creating a class that inherit form models.Manager, the base class for each object manager
 class TaggedItemManager(models.Manager):
-    def get_tags_for(self, obj_type, obj_id):
+    def get_tags_for(self, model, obj_id):
         # Querying Generic Relationships
         # ContentType is the model that represent the django_content_type table
         # get_for_model is a special method for the ContentType object manager. It returns the Content Type of a model class.
-        content_type = ContentType.objects.get_for_model(obj_type)
+        content_type = ContentType.objects.get_for_model(model)
         
         # \ Allow to separate code in diferent lines
-        # Indexing tags for product with product_id = 1
         return TaggedItem.objects \
         .select_related('tag') \
         .filter(
             content_type=content_type,
             object_id=obj_id
         )
-
 
 class Tag(models.Model):
     label = models.CharField(max_length=255)
