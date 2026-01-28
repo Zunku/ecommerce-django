@@ -11,7 +11,16 @@ from .models import User
 # Registering admin with the new extended User model
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    pass
+    # To add the email field to user admin we had to copy this code from BaseUserAdmin class and add email
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("username", "usable_password", "password1", "password2", 'email', 'first_name', 'last_name'),
+            },
+        ),
+    )
 
 # Using Generic Relationships
 # Class for managing Tags

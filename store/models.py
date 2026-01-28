@@ -1,7 +1,10 @@
-from django.db import models
+# Importing settings module to use AUTH_USER_MODEL and mantain independency
+from django.conf import settings
 # Module for Data Validation
 from django.core.validators import MinValueValidator
+from django.db import models
 from uuid import uuid4
+
 class Promotion(models.Model):
     description = models.CharField(max_length=255)
     discount = models.FloatField()
@@ -17,8 +20,8 @@ class Product(models.Model):
     slug = models.SlugField()
     # A better data field for large text
     # Data Validation
-    # blank is an argument to allow empty text in the object form
-    description = models.TextField(null=True, blank=True)
+    # blank is an argument to allow empty text when creating the object, use it in text fields
+    description = models.TextField(blank=True, null=True)
     # For monetary values always use DecimalField
     # Better than float bc it don't have rounding issues
     # The max price of our products will be 9999.99
@@ -51,12 +54,8 @@ class Product(models.Model):
         ordering = ['title']
     
 class Customer(models.Model):
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
-    email = models.EmailField(max_length=255, unique=True)
     phone = models.CharField(max_length=255)
-    birth_date = models.DateField(null=True)
-    
+    birth_date = models.DateField(null=True, blank=True)
     # Uppercase to indicate that this is a fix list of values, we don't have to mess with it
     # Defining  a list of choices for membership field
     
@@ -70,19 +69,20 @@ class Customer(models.Model):
         (MEMBERSHIP_GOLD, 'Gold'),
     ]
     membership = models.CharField(max_length=1, choices=MEMBERSHIP_CHOICES, default=MEMBERSHIP_BRONZE)
+    
     # This class it's for change metadata
     class Meta:
         # Change db table name, is not recomended because you are breking the convention and also have to change every table name to make consistency
         db_table = 'store_customers'
-        # indexes is a way to optimize querys
-        indexes = [
-            models.Index(fields=['last_name', 'first_name'])
-        ]
-        ordering = ['first_name', 'last_name']
+        ordering = ['user__first_name', 'user__last_name']
         
+    # Creating User Profiles. Customer model represent User Profile
+    # We had to delete first_name and last_name fields, now them will be stored in the user model, so we will need to make a relation, and change parameters names
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     def __str__(self):
-        # Now it will return it's first_name
-        return f'{self.first_name} {self.last_name}'
+        # Now it will return it's first and lastname when calling the object
+        return f'{self.user.first_name} {self.user.last_name}'
+    
     
 class Order(models.Model):
     placed_at = models.DateTimeField(auto_now_add=True)
@@ -99,6 +99,13 @@ class Order(models.Model):
 ] 
     payment_status = models.CharField(max_length=1, choices=PAYMENT_STATUS_CHOICES, default=PS_PENDING)
     
+    class Meta:
+        # Creating custom permissions
+        permissions = [
+            # (codename/description to show)
+            ('cancel_order', 'Can cancel order')
+        ]
+    
 # Defining a 1 to 1 relationship
 class Adress(models.Model):
     street = models.CharField(max_length=255)
@@ -113,6 +120,7 @@ class Adress(models.Model):
 class Collection(models.Model):
     title = models.CharField(max_length=255)
     # related_name = '+' Tells Django not to create the reverse relationship. Useful to avoid conflicts on a circular relationship
+    # null saves nulls into the database, use it in numeric fields
     featured_product = models.ForeignKey('Product', on_delete=models.SET_NULL, null=True, related_name='+')
 
     # Changing the object representation when you convert it to a string

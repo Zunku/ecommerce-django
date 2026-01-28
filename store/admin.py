@@ -120,10 +120,12 @@ admin.site.register(models.Product, ProductAdmin)
 # You can also register the model with a decorator
 @admin.register(models.Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'membership', 'orders_count']
+    autocomplete_fields = ['user']
+    list_display = ['user__first_name', 'user__last_name', 'membership', 'orders_count']
     list_editable = ['membership']
     list_per_page = 10
-    ordering = ['first_name', 'last_name']
+    list_select_related = ['user']
+    ordering = ['user__first_name', 'user__last_name']
     # Adding Search to the List Page
     # __istartswith Is a lookup to indicate no-sesitive string start
     search_fields = ['first_name__istartswith', 'last_name__istartswith']
