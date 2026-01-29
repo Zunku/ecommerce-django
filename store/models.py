@@ -79,6 +79,7 @@ class Customer(models.Model):
     # Creating User Profiles. Customer model represent User Profile
     # We had to delete first_name and last_name fields, now them will be stored in the user model, so we will need to make a relation, and change parameters names
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    
     def __str__(self):
         # Now it will return it's first and lastname when calling the object
         return f'{self.user.first_name} {self.user.last_name}'

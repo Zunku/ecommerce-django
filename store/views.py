@@ -7,24 +7,25 @@ from django_filters.rest_framework import DjangoFilterBackend
 # HTTP status code
 from rest_framework import status
 # REST Framework comes with it's own Request and Response classes, that are simpler and powerful
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 # Searching, Ordering
 from rest_framework.filters import SearchFilter, OrderingFilter
 # Generic Views are common views that inherit from mixins
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 # Pagination default
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 # Mixins are classes that encapsulate some patterns of code (Create, List, Retrive, Delete, Update)
 from rest_framework.mixins import CreateModelMixin, DestroyModelMixin, RetrieveModelMixin, ListModelMixin, UpdateModelMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-
 # Our app
 from .filters import ProductFilter
 from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer
 from .pagination import DefaultPagination
 from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartItemSerializer, CartSerializer, AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer
+from .permissions import IsAdminOrReadOnly
 
 # API RESTful Views
 # View Sets
@@ -45,6 +46,8 @@ class ProductViewSet(ModelViewSet):
     search_fields = ['title', 'description']
     # Ordering - Django restframework give us a backend for ordering by fields
     ordering_fields = ['unit_price', 'title', 'last_update']
+    permission_classes = [IsAdminOrReadOnly]
+    
     # Filters (Old)
     # Overwriting get_query to be able to filter products by collection
     # def get_queryset(self):
@@ -202,7 +205,8 @@ def product_detail(request, id):
 class CollectionViewSet(ModelViewSet):
     queryset = Collection.objects.annotate(product_count=Count('product')).all()
     serializer_class = CollectionSerializer
-
+    permission_classes = [IsAdminOrReadOnly]
+    
     def destroy(self, request, *args, **kwargs):
         if Product.objects.filter(collection_id=kwargs['pk']).count() > 0:
             return Response({'error': 'Collection cannot be deleted because is associated with a product.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -249,9 +253,34 @@ class CartItemViewSet(ModelViewSet):
         return {'cart_id': self.kwargs['cart_pk']}
     
 # View set for Profile API
-class CustomerViewSet(CreateModelMixin, 
-                      RetrieveModelMixin, 
-                      UpdateModelMixin,
-                      GenericViewSet):
+class CustomerViewSet(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
+    # Permissions determines which users can access our endpoints. IsAuthenticated allow only Authenticated users to access
+    permission_classes = [IsAdminUser]
+    # authentication_classes = [JWTAuthentication]
+    
+    # Asigning permissions depending on the request
+    # Here we are enabling get request for any users but anyting else is only avilable for authenticated users
+    # def get_permissions(self):
+    #     if self.request.method == 'GET':
+    #         # This method ask for a list of objects
+    #         return [AllowAny()]
+    #     return [IsAuthenticated()]
+    
+    # Action to access my customer profile
+    # Defining a custom action, its a new endpoint where you can access with function name (me) or with extra actions button
+    # detail determines if the actions will be avilable in the list or detail endpoint
+    # We can override permissions here with the same atribute
+    @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        # Every request have an user atribute that will contain data about the user or anonymus if not logged 
+        (customer, created) = Customer.objects.get_or_create(user_id=request.user.id)
+        if request.method == 'GET':
+            serializer = CustomerSerializer(customer)
+            return Response(serializer.data)
+        elif request.method == 'PUT':
+            serializer = CustomerSerializer(customer, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)

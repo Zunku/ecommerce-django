@@ -26,7 +26,6 @@ from tags.models import TaggedItem
 # View function: request -> response
 # request handler
 # In some frameworks is called actions
-# view no es muy adecuado porque hace referencia a algo que el usuario puede ver, en django a eso se le llama templates
 
 # Creating our first view function
 # It have to be mapped to a URL, so the functions is called when a request is sended to that URL
@@ -231,7 +230,8 @@ def updating_objects(request):
 
     # Updating Objects
     # We have to access directly to the object because otherway, if we try to update only one field of the object, we will generate data loss
-    collection = Collection.objects.get(pk=18)
+    # get_or_create returns the object with the condition, else creates a new object
+    collection = Collection.objects.get_or_create(pk=18)
     collection.title = 'E Sports'
     collection.featured_product = None
     # Every model have a method save that saves the record in our database

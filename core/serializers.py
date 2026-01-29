@@ -1,7 +1,6 @@
 # Importing serializer for UserCreation
 from djoser.serializers import UserCreateSerializer as BaseUCS, UserSerializer as BaseUS
 from rest_framework import serializers
-from core.models import User
 
 # Creating a custom serializer for registering users
 class UserCreateSerializer(BaseUCS):
@@ -16,5 +15,4 @@ class UserCreateSerializer(BaseUCS):
 # Custom serializer to show first and last name of current user
 class UserSerializer(BaseUS):
     class Meta(BaseUS.Meta):
-        model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name']

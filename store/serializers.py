@@ -80,6 +80,8 @@ class ProductSerializer(serializers.ModelSerializer):
 # This way, there is no need to define the validaton rules two times, in the serializer and the model
 # You can always redefine a field if you want to change what is showed in the api
 class CustomerSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(read_only=True)
+    
     class Meta:
         model = Customer
         # fields that we want to inherit form the model, and new fields
@@ -87,7 +89,6 @@ class CustomerSerializer(serializers.ModelSerializer):
         # This will be the Profile Serializer
         fields = ['id', 'user_id', 'phone', 'birth_date', 'membership']
         
-    user_id = serializers.IntegerField()
     # Validation between fields
     # We are overwriting the validate method, in this case makes no senses, just an example
     # def validate(self, data):
