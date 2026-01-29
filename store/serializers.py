@@ -84,18 +84,16 @@ class CustomerSerializer(serializers.ModelSerializer):
         model = Customer
         # fields that we want to inherit form the model, and new fields
         # Djando first look for this fields in the model, if it don't find any, he will then look for it in the serializer
-        fields = ['id', 'first_name', 'last_name', 'full_name']
-    full_name = serializers.SerializerMethodField(method_name='get_full_name')
-    
-    def get_full_name(self, customer:Customer):
-        return f"{customer.first_name} {customer.last_name}"
-    
+        # This will be the Profile Serializer
+        fields = ['id', 'user_id', 'phone', 'birth_date', 'membership']
+        
+    user_id = serializers.IntegerField()
     # Validation between fields
     # We are overwriting the validate method, in this case makes no senses, just an example
-    def validate(self, data):
-        if data['password'] != data['confirm_passowrd']:
-            return serializers.ValidationError('Passwords do not match')
-        return data
+    # def validate(self, data):
+    #     if data['password'] != data['confirm_passowrd']:
+    #         return serializers.ValidationError('Passwords do not match')
+    #     return data
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:

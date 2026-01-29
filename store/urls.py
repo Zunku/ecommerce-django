@@ -15,6 +15,7 @@ router = DefaultRouter()
 router.register('products', views.ProductViewSet, basename='products')
 router.register('collections', views.CollectionViewSet)
 router.register('carts', views.CartViewSet)
+router.register('customers', views.CustomerViewSet)
 
 # Nesting routes
 # (parent_router, 'parent prefix', parameter_name)
