@@ -22,10 +22,10 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 # Our app
 from .filters import ProductFilter
-from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer
+from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer, Order
 from .pagination import DefaultPagination
-from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartItemSerializer, CartSerializer, AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer
-from .permissions import IsAdminOrReadOnly
+from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartItemSerializer, CartSerializer, AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer, OrderSerializer, OrderItemSerializer
+from .permissions import IsAdminOrReadOnly, FullDjangoModelPermissions, ViewCustomerHistoryPermission
 
 # API RESTful Views
 # View Sets
@@ -257,7 +257,7 @@ class CustomerViewSet(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     # Permissions determines which users can access our endpoints. IsAuthenticated allow only Authenticated users to access
-    permission_classes = [IsAdminUser]
+    permission_classes = [FullDjangoModelPermissions]
     # authentication_classes = [JWTAuthentication]
     
     # Asigning permissions depending on the request
@@ -267,6 +267,11 @@ class CustomerViewSet(ModelViewSet):
     #         # This method ask for a list of objects
     #         return [AllowAny()]
     #     return [IsAuthenticated()]
+    
+    # Action with a custom model permission
+    @action(detail=True, permission_classes=[ViewCustomerHistoryPermission])
+    def history(self, request, pk):
+        return Response('ok')
     
     # Action to access my customer profile
     # Defining a custom action, its a new endpoint where you can access with function name (me) or with extra actions button
@@ -284,3 +289,17 @@ class CustomerViewSet(ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
+    
+class OrderViewSet(ModelViewSet):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Order.objects.prefetch_related('orderitems').all()
+        return Order.objects.filter(customer_id=user.customer.id).prefetch_related('orderitems')
+
+class OrderItemViewSet(ModelViewSet):
+    queryset = OrderItem.objects.prefetch_related('product')
+    serializer_class = OrderItemSerializer

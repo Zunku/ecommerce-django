@@ -16,14 +16,18 @@ router.register('products', views.ProductViewSet, basename='products')
 router.register('collections', views.CollectionViewSet)
 router.register('carts', views.CartViewSet)
 router.register('customers', views.CustomerViewSet)
+router.register('orders', views.OrderViewSet, basename='orders')
 
 # Nesting routes
 # (parent_router, 'parent prefix', parameter_name)
 products_router = routers.NestedDefaultRouter(router, 'products', lookup='product')
 cart_items_router = routers.NestedDefaultRouter(router, 'carts', lookup='cart')
-# Registering child resources ('prefix', ViewSet, prefix_for_urlpatterns) basename: used to generate URL patterns ex: product-review-list, product-review-detail
+order_items_router = routers.NestedDefaultRouter(router, 'orders', lookup='order')
+
+# Registering child resources ('prefix', ViewSet, prefix_for_urlpatterns) basename: used to generate views/action names: product-review-list, product-review-detail
 products_router.register('reviews', views.ReviewViewSet, basename='product-reviews')
-cart_items_router.register('cart-items', views.CartItemViewSet, basename='cart-items')
+cart_items_router.register('cartitems', views.CartItemViewSet, basename='cartitems')
+order_items_router.register('orderitems', views.OrderItemViewSet, basename='orderitems')
 urlpatterns = router.urls + products_router.urls + cart_items_router.urls
 
 # Adding extra routes to our urlpatterns

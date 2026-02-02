@@ -59,6 +59,7 @@ def manager_objects(request):
     try:
         # Indexing an element from our table, returns an object
         # pk: Primary Key. Useful bc we don't have to remember the name of the field
+        # .get() Get a SINGLE model instance
         product = Product.objects.get(pk=1)
     except ObjectDoesNotExist:
         pass
@@ -132,13 +133,16 @@ def sort_limit(request):
     query_set1 = Product.objects.all()[5:10]
     
     # Select fields
-    # .values() Allow us to index only selected files from a table, with __ allows us to index related tables, making joins
+    # .values() Allow us to index only selected fields from a table, with __ allows us to index related tables, making joins
     # Each object is a dictionary, not a product instance like before
     query_set2 = Product.objects.values('id', 'title', 'collection__title')
     
     # .values_list() Returns tuples instead of dictionaries
     # flat=True Deletes the tuple and returns the string alone when only one field
     query_set2 = Product.objects.values_list('id', 'title', 'collection__title', flat=True)
+    
+    # .only() Allows to select only fields of your choice
+    query_set3 = Product.objects.only('title')
     
     # Distinc
     # .distinct() Index only unique values

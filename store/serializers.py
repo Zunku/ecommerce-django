@@ -5,7 +5,7 @@ from django.db.models.aggregates import Sum
 # Deserialization: convert JSON/dictionaries to model instances
 from rest_framework import serializers
 from decimal import Decimal
-from .models import Product, Collection, Customer, Review, Cart, CartItem
+from .models import Product, Collection, Customer, Review, Cart, CartItem, Order, OrderItem
 
 # It's not te best way to serialize, Model Serializers are better
 class WrongCollectionSerializer(serializers.Serializer):
@@ -191,3 +191,16 @@ class CartSerializer(serializers.ModelSerializer):
     def get_total_price_easy(self, cart:Cart):
         totals_items_prices = [item.quantity * item.product.unit_price for item in cart.items.all()]
         return sum(totals_items_prices)
+    
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product', 'unit_price', 'quantity']
+    product = SimpleProductSerializer(read_only=True)
+        
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['id', 'customer_id', 'placed_at', 'payment_status', 'orderitems']
+        
+    orderitems = OrderItemSerializer(many=True, read_only=True)

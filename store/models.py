@@ -75,6 +75,10 @@ class Customer(models.Model):
         # Change db table name, is not recomended because you are breking the convention and also have to change every table name to make consistency
         db_table = 'store_customers'
         ordering = ['user__first_name', 'user__last_name']
+        # Creating custom model permission
+        permissions = [
+            ('view_history', 'Can view history')
+        ]
         
     # Creating User Profiles. Customer model represent User Profile
     # We had to delete first_name and last_name fields, now them will be stored in the user model, so we will need to make a relation, and change parameters names
@@ -138,9 +142,9 @@ class Collection(models.Model):
 # Defining a * to 1 relationship with ForeignKey
 class OrderItem(models.Model):
     # ForeignKey: It's a reference to another model, like say "this registry belongs to another one". Allows you to create a * to 1 relationship with the parent. Each Item saves an OrderID.
-    order = models.ForeignKey(Order, on_delete=models.PROTECT)
+    order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name='orderitems')
     # related_name Allow us to change the related name with another model
-    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='orderitem')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='orderitems')
     quantity = models.PositiveSmallIntegerField()
     # Despite we already have the product price in the product model, we should always store the price of the product at the order time
     unit_price = models.DecimalField(max_digits=6, decimal_places=2)
