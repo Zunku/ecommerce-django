@@ -1,10 +1,10 @@
+from decimal import Decimal
 from django.db.models import F, ExpressionWrapper, DecimalField
 from django.db.models.aggregates import Sum
-
+from django.db import transaction
 # Serializers are classes that convert model instances to dictionaries/JSON and vice versa
 # Deserialization: convert JSON/dictionaries to model instances
 from rest_framework import serializers
-from decimal import Decimal
 from .models import Product, Collection, Customer, Review, Cart, CartItem, Order, OrderItem
 
 # It's not te best way to serialize, Model Serializers are better
@@ -204,3 +204,47 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'customer_id', 'placed_at', 'payment_status', 'orderitems']
         
     orderitems = OrderItemSerializer(many=True, read_only=True)
+    
+# Serializer for creating an order from a cart
+class CreateOrderSerializer(serializers.Serializer):
+    cart_id = serializers.UUIDField()
+    
+    # Validating if a cart exist before creating an order
+    def validate_cart_id(self, cart_id):
+        if not Cart.objects.filter(pk=cart_id).exists():
+            raise serializers.ValidationError('No cart with the given ID was found')
+        elif not CartItem.objects.filter(cart_id=cart_id).count() == 0:
+            raise serializers.ValidationError('The cart is empty. Add items to make an order.')
+        return cart_id 
+    
+    def save(self, **kwargs):
+        with transaction.atomic():
+            cart_id = self.validated_data['cart_id']
+            
+            (customer, created) = Customer.objects.get_or_create(user_id=self.context['user_id'])
+            order = Order.objects.create(customer=customer)
+            
+            cart_items = CartItem.objects \
+                .select_related('product') \
+                .filter(cart_id=cart_id)
+            # List comprehension to unpack items in cart_items and convert them into order_items
+            order_items = [
+                OrderItem(
+                    order=order,
+                    product=item.product,
+                    unit_price=item.product.unit_price,
+                    quantity=item.quantity
+                ) for item in cart_items
+            ]
+            # bulk_create allow us to save a list of objects at once
+            OrderItem.objects.bulk_create(order_items)
+            # Deleting the cart for the order
+            Cart.objects.filter(pk=cart_id).delete()
+            
+            return order
+
+# Custom serializer for updating an order, this way we avoid redefining fields in the order serializer, and have more control
+class UpdateOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['payment_status']

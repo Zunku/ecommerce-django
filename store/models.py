@@ -54,6 +54,7 @@ class Product(models.Model):
         ordering = ['title']
     
 class Customer(models.Model):
+    # A CharField can be null for default
     phone = models.CharField(max_length=255)
     birth_date = models.DateField(null=True, blank=True)
     # Uppercase to indicate that this is a fix list of values, we don't have to mess with it

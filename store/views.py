@@ -24,7 +24,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from .filters import ProductFilter
 from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer, Order
 from .pagination import DefaultPagination
-from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartItemSerializer, CartSerializer, AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer, OrderSerializer, OrderItemSerializer
+from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartItemSerializer, CartSerializer, AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer, OrderSerializer, OrderItemSerializer, CreateOrderSerializer, UpdateOrderSerializer
 from .permissions import IsAdminOrReadOnly, FullDjangoModelPermissions, ViewCustomerHistoryPermission
 
 # API RESTful Views
@@ -291,15 +291,39 @@ class CustomerViewSet(ModelViewSet):
             return Response(serializer.data)
     
 class OrderViewSet(ModelViewSet):
-    serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]
     
+    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
+    # Indexing a diferent query depending on the permissions
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
             return Order.objects.prefetch_related('orderitems').all()
-        return Order.objects.filter(customer_id=user.customer.id).prefetch_related('orderitems')
-
+        # Here we are braking the Command Query separation, we will fix it in the future
+        (customer_id, created) = Customer.objects.only('id').get_or_create(user_id=user.id)
+        return Order.objects.filter(customer_id=customer_id)
+    
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateOrderSerializer
+        elif self.request.method == 'PATCH':
+            return UpdateOrderSerializer
+        return OrderSerializer
+    
+    # Overwriting create function to save order and retrieve the order with separated serializers, and show diferent fields
+    def create(self, request, *args, **kwargs):
+        serializer = CreateOrderSerializer(
+            data=request.data,
+            context={'user_id': self.request.user.id})
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+        
+    def get_permissions(self):
+        if self.request.method in ['PATCH', 'DELETE']:
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+        
 class OrderItemViewSet(ModelViewSet):
     queryset = OrderItem.objects.prefetch_related('product')
     serializer_class = OrderItemSerializer
