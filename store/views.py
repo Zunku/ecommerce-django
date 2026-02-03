@@ -62,7 +62,6 @@ class ProductViewSet(ModelViewSet):
     def get_serializer_context(self):
         return {'request':self.request}
     
-    # We have the delete method to this, because ModelViewSet need it 
     # *args & **kwargs are used for a function to be able to recive aruguments without needed to know how many neither how much. Allow to overwrite methods without breakup
     # *args posicional arguments
     # **kwargs named arguments (dictionary)
@@ -280,7 +279,7 @@ class CustomerViewSet(ModelViewSet):
     @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
     def me(self, request):
         # Every request have an user atribute that will contain data about the user or anonymus if not logged 
-        (customer, created) = Customer.objects.get_or_create(user_id=request.user.id)
+        customer = Customer.objects.get_or_create(user_id=request.user.id)
         if request.method == 'GET':
             serializer = CustomerSerializer(customer)
             return Response(serializer.data)
@@ -292,14 +291,13 @@ class CustomerViewSet(ModelViewSet):
     
 class OrderViewSet(ModelViewSet):
     
-    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     # Indexing a diferent query depending on the permissions
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
             return Order.objects.prefetch_related('orderitems').all()
-        # Here we are braking the Command Query separation, we will fix it in the future
-        (customer_id, created) = Customer.objects.only('id').get_or_create(user_id=user.id)
+        customer_id = Customer.objects.only('id').get(user_id=user.id)
         return Order.objects.filter(customer_id=customer_id)
     
     def get_serializer_class(self):

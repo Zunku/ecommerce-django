@@ -6,7 +6,7 @@ from django.db import transaction
 # Deserialization: convert JSON/dictionaries to model instances
 from rest_framework import serializers
 from .models import Product, Collection, Customer, Review, Cart, CartItem, Order, OrderItem
-
+from .signals import order_created
 # It's not te best way to serialize, Model Serializers are better
 class WrongCollectionSerializer(serializers.Serializer):
     id = serializers.IntegerField()
@@ -213,7 +213,7 @@ class CreateOrderSerializer(serializers.Serializer):
     def validate_cart_id(self, cart_id):
         if not Cart.objects.filter(pk=cart_id).exists():
             raise serializers.ValidationError('No cart with the given ID was found')
-        elif not CartItem.objects.filter(cart_id=cart_id).count() == 0:
+        elif CartItem.objects.filter(cart_id=cart_id).count() == 0:
             raise serializers.ValidationError('The cart is empty. Add items to make an order.')
         return cart_id 
     
@@ -221,7 +221,7 @@ class CreateOrderSerializer(serializers.Serializer):
         with transaction.atomic():
             cart_id = self.validated_data['cart_id']
             
-            (customer, created) = Customer.objects.get_or_create(user_id=self.context['user_id'])
+            customer = Customer.objects.get(user_id=self.context['user_id'])
             order = Order.objects.create(customer=customer)
             
             cart_items = CartItem.objects \
@@ -240,6 +240,9 @@ class CreateOrderSerializer(serializers.Serializer):
             OrderItem.objects.bulk_create(order_items)
             # Deleting the cart for the order
             Cart.objects.filter(pk=cart_id).delete()
+            
+            # send and send_robust if for sending a signal, the diference is that robust notifies other receivers if one of them fails
+            order_created.send_robust(self.__class__, order=order)
             
             return order
 
