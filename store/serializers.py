@@ -19,6 +19,16 @@ class CollectionSerializer(serializers.ModelSerializer):
     # Adding an Annotated() field to the model
     product_count = serializers.IntegerField(read_only=True)
     
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image', 'product_id']
+    
+    # Getting context from the view and adding product_id to the object creation
+    def create(self, validated_data):
+        product_id = self.context['product_id']
+        return ProductImage.objects.create(product_id=product_id, **validated_data)
+    
 # Creating a class to serialize Products
 # It's exactly like defining a model
 # Serializers not necesary have to look like model objects, they can have their own fields
@@ -26,7 +36,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'description', 'slug', 'inventory', 'price', 'price_with_tax', 'collection_id','collection_title', 'collection_object' ,'collection_link']
+        fields = ['id', 'title', 'description', 'slug', 'inventory', 'price', 'price_with_tax', 'collection_id','collection_title', 'collection_object' ,'collection_link', 'images']
     # Only return external representation information
     id = serializers.IntegerField(read_only=True)
     # We still have to add atributes like max_lenght because later we will use serializers when receiving data to our API
@@ -56,6 +66,7 @@ class ProductSerializer(serializers.ModelSerializer):
         view_name='collection-detail',
         required=False
     )
+    images = ProductImageSerializer(many=True, read_only=True)
     
     # Method that will be passed to SerializerMethodField, to create a Custom Serializer Field
     # If we annotate parameters with it's corresponsant type, we will get intelisense
@@ -75,15 +86,6 @@ class ProductSerializer(serializers.ModelSerializer):
     #     instance.save()
     #     return instance
 
-class ProductImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductImage
-        fields = ['id', 'image', 'product_id']
-    
-    # Getting context from the view and adding product_id to the object creation
-    def create(self, validated_data):
-        product_id = self.context['product_id']
-        return ProductImage.objects.create(product_id=product_id, **validated_data)
 # Model Serializers
 # It's a much better way
 # This way, there is no need to define the validaton rules two times, in the serializer and the model

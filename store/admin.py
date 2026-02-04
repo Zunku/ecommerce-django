@@ -59,6 +59,14 @@ class InventoryFilter(admin.SimpleListFilter):
         if self.value() == '<10':
             return queryset.filter(inventory__lt=10)
 
+class ProductImageInline(admin.TabularInline):
+    model = models.ProductImage
+    readonly_fields = ['thumbnail']
+    
+    def thumbnail(self, instance:models.ProductImage):
+        if instance.image.name != '':
+            return format_html(f'<img src="{instance.image.url}" class=thumbnail>')
+        return ''
 # In this class we can specify how we want to view/edit our products
 # For convention you need to use ModelnameAdmin
 class ProductAdmin(admin.ModelAdmin):
@@ -74,6 +82,7 @@ class ProductAdmin(admin.ModelAdmin):
     exclude = ['promotions']
     # List of actions
     actions = ['clear_inventory']
+    inlines = [ProductImageInline]
     search_fields = ['title']
     # What fileds will be diaplayed
     list_display = ['title', 'unit_price', 'inventory_status', 'collection_title']
@@ -112,10 +121,17 @@ class ProductAdmin(admin.ModelAdmin):
             # Type of message
             messages.ERROR
         )
+    
+    class Media:
+        # Static assets to load
+        css = {
+            'all': ['store/styles.css']
+        }
         
 # Registering Product model with its ProductAdmin class
 admin.site.register(models.Product, ProductAdmin)
 
+    
 
 # You can also register the model with a decorator
 @admin.register(models.Customer)

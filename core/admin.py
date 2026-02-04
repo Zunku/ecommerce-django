@@ -4,6 +4,7 @@ from django.contrib.contenttypes.admin import GenericTabularInline
 from store.admin import ProductAdmin
 from tags.models import TaggedItem
 from store.models import Product
+from store.admin import ProductImageInline
 
 from .models import User
 # We need to add the app to settings.py
@@ -35,7 +36,7 @@ class TagInline(GenericTabularInline):
 
 # Creating a custom admin
 class CustomProductAdmin(ProductAdmin):
-    inlines = [TagInline]
+    inlines = [TagInline, ProductImageInline]
     
 # Unregister a model from model interfaz
 admin.site.unregister(Product)

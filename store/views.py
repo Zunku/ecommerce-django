@@ -31,7 +31,7 @@ from .permissions import IsAdminOrReadOnly, FullDjangoModelPermissions, ViewCust
 # View Sets
 # ModelViewSet is just a combination of all the Mixins
 class ProductViewSet(ModelViewSet):
-    queryset = Product.objects.select_related('collection').all()
+    queryset = Product.objects.select_related('collection').prefetch_related('images').all()
     serializer_class = ProductSerializer
     # Generic Filters/Backend, beside giving us generic filters, also implement a button to change between filters
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
