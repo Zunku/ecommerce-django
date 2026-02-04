@@ -53,6 +53,11 @@ class Product(models.Model):
         # Allows you to define an order
         ordering = ['title']
     
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    # FileField : A field for any kind of document
+    image = models.ImageField(upload_to='store/images')
+
 class Customer(models.Model):
     # A CharField can be null for default
     phone = models.CharField(max_length=255)

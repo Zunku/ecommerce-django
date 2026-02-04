@@ -26,8 +26,9 @@ order_items_router = routers.NestedDefaultRouter(router, 'orders', lookup='order
 
 # Registering child resources ('prefix', ViewSet, prefix_for_urlpatterns) basename: used to generate views/action names: product-review-list, product-review-detail
 products_router.register('reviews', views.ReviewViewSet, basename='product-reviews')
-cart_items_router.register('cartitems', views.CartItemViewSet, basename='cartitems')
-order_items_router.register('orderitems', views.OrderItemViewSet, basename='orderitems')
+products_router.register('images', views.ProductImageView, basename='product-images')
+cart_items_router.register('cartitems', views.CartItemViewSet, basename='cart-items')
+order_items_router.register('orderitems', views.OrderItemViewSet, basename='order-items')
 urlpatterns = router.urls + products_router.urls + cart_items_router.urls
 
 # Adding extra routes to our urlpatterns

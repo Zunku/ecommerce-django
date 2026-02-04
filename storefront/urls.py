@@ -14,6 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 # include: Include urls from another app
 from django.urls import path, include
@@ -38,3 +40,7 @@ urlpatterns = [
 
     path('__debug__/', include(debug_toolbar.urls))
 ]
+
+# Here we are telling Django that we want to expose that is defined here, and any request should be routed to the file system at this adress. Good for development, not production
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

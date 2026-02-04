@@ -5,7 +5,7 @@ from django.db import transaction
 # Serializers are classes that convert model instances to dictionaries/JSON and vice versa
 # Deserialization: convert JSON/dictionaries to model instances
 from rest_framework import serializers
-from .models import Product, Collection, Customer, Review, Cart, CartItem, Order, OrderItem
+from .models import Product, Collection, Customer, Review, Cart, CartItem, Order, OrderItem, ProductImage
 from .signals import order_created
 # It's not te best way to serialize, Model Serializers are better
 class WrongCollectionSerializer(serializers.Serializer):
@@ -74,7 +74,16 @@ class ProductSerializer(serializers.ModelSerializer):
     #     instance.unit_price = validated_data.get('unit_price')
     #     instance.save()
     #     return instance
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image', 'product_id']
     
+    # Getting context from the view and adding product_id to the object creation
+    def create(self, validated_data):
+        product_id = self.context['product_id']
+        return ProductImage.objects.create(product_id=product_id, **validated_data)
 # Model Serializers
 # It's a much better way
 # This way, there is no need to define the validaton rules two times, in the serializer and the model
