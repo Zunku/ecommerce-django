@@ -1,9 +1,6 @@
 import datetime
 
-# function to use templates
-from django.shortcuts import render
-# Send a http response
-from django.http import HttpResponse
+from django.core.mail import send_mail, mail_admins, BadHeaderError, EmailMessage
 # Django exceptions managment
 from django.core.exceptions import ObjectDoesNotExist
 # Q is short for Query. Q objects
@@ -15,11 +12,13 @@ from django.db.models.aggregates import Count, Max, Min, Avg, Sum
 # SQL CONCAT Function
 from django.db.models.functions import Concat
 from django.db import transaction, connection
-# Model that represent the ContentType table
-from django.contrib.contenttypes.models import ContentType
+# Send a http response
+from django.http import HttpResponse
+# function to use templates
+from django.shortcuts import render
+from templated_mail.mail import BaseEmailMessage
 
 from store.models import Product, Order, OrderItem, Customer, Collection
-
 from tags.models import TaggedItem
 
 # Create your views here.
@@ -290,3 +289,36 @@ def transactions(request):
         cursor.callproc('get_customers', [1,2,3])
     
     return render(request, 'aggregate_func.html', {'name': 'Daniel', 'result': queryset})
+
+# Function for sending an email simple
+def sd_email(request):
+    try:
+        send_mail('subject', 'message', 'info@zunkubuy.com', ['pepe@client.com'])
+        # Send a mail to all admins in settings
+        mail_admins('subject', 'message', html_message='<h1>HTML message<h1>')
+    except BadHeaderError:
+        pass
+    return HttpResponse('Email sended')
+
+# Attach file
+def sd_email2(request):
+    try: 
+        message = EmailMessage('subject', 'message', 'info@zunkubuy.com', ['pepe@client.com'])
+        # Relative path to our project
+        message.attach_file('playground/static/images/dog.jpeg')
+        message.send()
+    except BadHeaderError:
+        pass
+    return HttpResponse('Email sended')
+
+# Email with template
+def sd_email3(request):
+    try: 
+        message = BaseEmailMessage(
+            template_name='emails/hello.html',
+            context={'name': 'Daniel'}
+        )
+        message.send(['juan@zunkubuy.com'])
+    except BadHeaderError:
+        pass
+    return HttpResponse('Email sended')

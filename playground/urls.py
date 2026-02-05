@@ -15,4 +15,5 @@ urlpatterns = [
     path('aggregate-func/', views.aggregate_func),
     path('updating-objects/', views.updating_objects),
     path('transactions/', views.transactions),
+    path('email/', views.sd_email3),
 ]
