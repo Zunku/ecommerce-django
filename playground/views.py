@@ -20,7 +20,7 @@ from templated_mail.mail import BaseEmailMessage
 
 from store.models import Product, Order, OrderItem, Customer, Collection
 from tags.models import TaggedItem
-
+from .tasks import notify_customers
 # Create your views here.
 # View function: request -> response
 # request handler
@@ -322,3 +322,7 @@ def sd_email3(request):
     except BadHeaderError:
         pass
     return HttpResponse('Email sended')
+
+def celery_task(request):
+    notify_customers.delay('Hello')
+    return HttpResponse('Celery Task')
