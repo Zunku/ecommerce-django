@@ -41,4 +41,5 @@ dev = [
     "click-repl==0.3.0",
     "colorama==0.4.6",
     "prompt-toolkit==3.0.52",
+    "pytest-django>=4.11.1",
 ]
