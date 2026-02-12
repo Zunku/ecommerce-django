@@ -42,4 +42,7 @@ dev = [
     "colorama==0.4.6",
     "prompt-toolkit==3.0.52",
     "pytest-django>=4.11.1",
+    "pytest-watch>=4.2.0",
+    "model-bakery>=1.23.2",
+    "locust>=2.43.2",
 ]

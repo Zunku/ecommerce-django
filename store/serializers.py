@@ -36,14 +36,13 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'description', 'slug', 'inventory', 'price', 'price_with_tax', 'collection_id','collection_title', 'collection_object' ,'collection_link', 'images']
+        fields = ['id', 'title', 'description', 'slug', 'inventory', 'unit_price', 'price_with_tax', 'collection_id','collection_title', 'collection_object' ,'collection_link', 'images']
     # Only return external representation information
     id = serializers.IntegerField(read_only=True)
     # We still have to add atributes like max_lenght because later we will use serializers when receiving data to our API
     title = serializers.CharField(max_length=255)
     # source Django asumes that serializer fields/atributes will match models fields/atributes, if not, you need to use this parameter to indicate the model field/atributes source, but is not a good practice changing field names bc you are breaking consistency
-    price = serializers.DecimalField(max_digits=6, decimal_places=2, source='unit_price')
-    
+       
     # Custom Serializer Method Field
     price_with_tax = serializers.SerializerMethodField(method_name='get_price_tax')
     
