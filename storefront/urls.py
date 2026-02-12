@@ -43,4 +43,6 @@ urlpatterns = [
 
 # Here we are telling Django that we want to expose that is defined here, and any request should be routed to the file system at this adress. Good for development, not production
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, 
+                          document_root=settings.MEDIA_ROOT)
+    urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]

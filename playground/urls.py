@@ -17,4 +17,5 @@ urlpatterns = [
     path('transactions/', views.transactions),
     path('email/', views.sd_email3),
     path('celery/', views.celery_task),
+    path('slow/', views.slow_api),
 ]

@@ -32,7 +32,11 @@ class WebsiteUser(HttpUser):
             # Sending data to the endpoint
             json={'product_id': product_id, 'quantity':1}
         )
-        
+    
+    @task()
+    def say_hello(self):
+        self.client.get('/playground/slow/')
+    
     # This is a life cycle hook, it's called every time a new user starts browsing our website
     def on_start(self):
         # Creating a cart for the user

@@ -1,4 +1,5 @@
 import datetime
+import requests
 
 from django.core.mail import send_mail, mail_admins, BadHeaderError, EmailMessage
 # Django exceptions managment
@@ -326,3 +327,10 @@ def sd_email3(request):
 def celery_task(request):
     notify_customers.delay('Hello')
     return HttpResponse('Celery Task')
+
+def slow_api(request):
+    # Server that simultes slow requests (2 seconds)
+    requests.get('https://httpbin.org/delay/2')
+    return HttpResponse('Slow API from httpbin')
+
+# Using the Low-Level Cache API
