@@ -17,5 +17,7 @@ urlpatterns = [
     path('transactions/', views.transactions),
     path('email/', views.sd_email3),
     path('celery/', views.celery_task),
-    path('slow/', views.slow_api),
+    path('slow/', views.HelloView.as_view()),
+    path('slow2/', views.HelloView.as_view()),
+    path('logs', views.LoggingView.as_view()),
 ]

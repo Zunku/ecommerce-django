@@ -1,6 +1,9 @@
 import datetime
+# For sending request to another pages
 import requests
-
+import logging
+# This object has an API for accesing the cache
+from django.core.cache import cache
 from django.core.mail import send_mail, mail_admins, BadHeaderError, EmailMessage
 # Django exceptions managment
 from django.core.exceptions import ObjectDoesNotExist
@@ -17,7 +20,10 @@ from django.db import transaction, connection
 from django.http import HttpResponse
 # function to use templates
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from templated_mail.mail import BaseEmailMessage
+from rest_framework.views import APIView
 
 from store.models import Product, Order, OrderItem, Customer, Collection
 from tags.models import TaggedItem
@@ -329,8 +335,43 @@ def celery_task(request):
     return HttpResponse('Celery Task')
 
 def slow_api(request):
-    # Server that simultes slow requests (2 seconds)
-    requests.get('https://httpbin.org/delay/2')
-    return HttpResponse('Slow API from httpbin')
+    key = 'httpbin_result'
+    # Using the Low-Level Cache API (key we are looking)
+    if cache.get(key) is None:
+        # Server that simultes slow requests (2 seconds)
+        response = requests.get('https://httpbin.org/delay/2')
+        data = response.json
+        # Store data in the cache (key, value)
+        # By defult cache is stored 5 minutes, you can change it on each method or globaly in settings
+        cache.set(key, data, 10 * 60)
+    return HttpResponse(f'Slow API from httpbin. Cache key {cache.get(key)}')
 
-# Using the Low-Level Cache API
+@cache_page(10*60)
+def simple_caching(request):
+    response = requests.get('https://httpbin.org/delay/2')
+    data = response.json
+    return render(request, 'simple_cache.html', {'cache':data})
+
+# Caching a class-base view
+class HelloView(APIView):
+    @method_decorator(cache_page(10*60))
+    def get(self, request):
+        response = requests.get('https://httpbin.org/delay/2')
+        data = response.json()
+        return render(request, 'simple_cache.html', {'cache':data})
+    
+# Logging
+logger = logging.getLogger(__name__)
+
+class LoggingView(APIView):
+    def get(self, request):
+        try:
+            # Writing a log level info
+            logger.info('Calling httpbin')
+            response = requests.get('https://httpbin.org/delay/2')
+            logger.info('Received response')
+            data = response.json()
+        except request.ConnectionError:
+            # Witing a log level critical
+            logger.critical('httpbin is offline')
+        return render(request, 'simple_cache.html', {'cache':data})

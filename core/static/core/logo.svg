@@ -1,0 +1,27 @@
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<svg width="180" height="200" viewBox="0 0 180 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Zunku Buy logo">
+  <defs>
+    <linearGradient id="zunkuGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6C63FF"></stop>
+      <stop offset="100%" stop-color="#00C2A8"></stop>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon -->
+  <g transform="translate(50,10)">
+    <rect x="0" y="10" rx="14" ry="14" width="80" height="70" fill="url(#zunkuGradient)"></rect>
+    <path d="M18 28 L62 28 L28 64 L62 64" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"></path>
+    <circle cx="28" cy="86" r="5" fill="#6C63FF"></circle>
+    <circle cx="60" cy="86" r="5" fill="#6C63FF"></circle>
+  </g>
+
+  <!-- Text below -->
+  <g text-anchor="middle" transform="translate(90,120)">
+    <text x="0" y="0" font-family="Poppins, Montserrat, Arial, sans-serif" font-size="28" font-weight="700" fill="#111827">
+      Zunku
+    </text>
+    <text x="0" y="28" font-family="Poppins, Montserrat, Arial, sans-serif" font-size="18" font-weight="500" fill="#00C2A8" letter-spacing="1">
+      BUY
+    </text>
+  </g>
+</svg>

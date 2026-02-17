@@ -28,6 +28,7 @@ admin.site.index_title = 'Admin'
 
 # A spacial variable that stores URLs, receives requests and directs them to their correspondant apps
 urlpatterns = [
+    path('', include('core.urls')),
     path('admin/', admin.site.urls),
     
     # Any url that starts with playground will be routed to our playground app
