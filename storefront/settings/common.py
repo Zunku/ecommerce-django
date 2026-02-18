@@ -173,22 +173,10 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
 }
 
-# Email backend configuration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'localhost'
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
-# Real smtp servers runs on port 25
-EMAIL_PORT = 2525
-DEFAULT_FROM_EMAIL = 'form@zunkubuy.com'
-
 # Admin emails
 ADMINS =[
     ('Zunku', 'admin@zunkubuy.com')
 ]
-
-# Giving celery the port of our broker, redis database number 1
-CELERY_BROKER_URL = 'redis://localhost:6379/1'
 
 CELERY_BEAT_SCHEDULE = {
      'notify_customers': {
@@ -204,18 +192,6 @@ CELERY_BEAT_SCHEDULE = {
          'args': ['Hello world'],
         #  'kwargs': {'Name':'Zunku'},
      }
-}
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        # Redis database number 2
-        "LOCATION": "redis://localhost:6379/2",
-        "TIMEOUT":10*60,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
 }
 
 LOGGING = {

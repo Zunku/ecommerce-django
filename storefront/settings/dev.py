@@ -16,3 +16,26 @@ DATABASES = {
         'PORT': '5432'
     }
 }
+
+# Giving celery the port of our broker, redis database number 1
+CELERY_BROKER_URL = 'redis://localhost:6379/1'
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        # Redis database number 2
+        "LOCATION": "redis://localhost:6379/2",
+        "TIMEOUT":10*60,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# Email backend configuration
+EMAIL_HOST = 'localhost'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+# Real smtp servers runs on port 25
+EMAIL_PORT = 2525
+DEFAULT_FROM_EMAIL = 'form@zunkubuy.com'
