@@ -22,7 +22,7 @@ body {
 
 /* Logo */
 .logo {
-    width: 160px;
+    width: 400px;
     height: auto;
     transition: transform 0.25s ease, filter 0.25s ease;
     cursor: pointer;
