@@ -1,0 +1,36 @@
+services:
+  web:
+    build: .
+    command: ./wait-for.it.sh postgres:5432 -- ./docker-entrypoint.sh
+    ports:
+      - 8000:8000
+    depends_on:
+      - redis
+      - postgres
+    restart: on-failure
+    volumes:
+      -.:/app
+  postgres:
+    image: postgres:18
+    ports:
+      - 5432:5432
+    restart: always
+    environment:
+      - POSTGRES_DATABASE=storefront
+      - POSTGRES_ROOT_PASSWORD=MyPassword
+    volumes:
+      - postgresdata:/var/lib/postgres
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+    restart: always
+    volumes:
+      - redisdata:/data
+  smtp4dev:
+    image: rnwood/smtp4dev:v3
+    ports:
+    - 5000:80
+    - 25:25
+    restart: always
+    
