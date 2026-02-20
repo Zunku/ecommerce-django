@@ -2,25 +2,36 @@
 
 A complete backend for an e-commerce system built with Django and Django REST Framework, focused on clean architecture, automated testing, performance and production-ready practices.
 
-This project is not just a CRUD. It is designed as a realistic, production-oriented API including JWT authentication, cart management, admin interfaz, independant apps, validation, automated testing, and performance testing.
+This project is not just a CRUD. It is designed as a realistic, production-oriented API including JWT authentication, cart management, admin interface, independent apps, validation, automated testing, and performance testing.
 
----
+
 
 ## 🚀 Tech Stack
 
-* Python 3
-* Django
-* Django REST Framework
-* PostgreSQL
-* Pytest + pytest-django
-* Model Bakery
-* Redis (caching & message broker)
-* Locust + Silk (performance testing)
-* Gunicorn (WSGI server)
-* Celery (Asynchronous tasks)
-* Heroku
+[![Python](https://img.shields.io/badge/Python-3.14+-yellow?style=for-the-badge&logo=python&logoColor=white&labelColor=101010)](https://python.org)
+[![PostgreSQL](https://img.shields.io/badge/Postgres-DB-gray?style=for-the-badge&logo=postgresql&logoColor=white&labelColor=101010)](https://www.postgresql.org/)
+[![DJango](https://img.shields.io/badge/Django-5.2+-092E20?style=for-the-badge&logo=django&logoColor=white&labelColor=101010)](https://www.djangoproject.com/)
+[![Docker](https://img.shields.io/badge/Docker-Container-0078d7?style=for-the-badge&logo=docker&logoColor=white&labelColor=101010&logoSize=auto)](https://hub.docker.com)
+[![Pytest](https://img.shields.io/badge/Tests-Pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white&labelColor=101010)](https://docs.pytest.org/en/stable/)
+[![Linux](https://img.shields.io/badge/bash-linux-FCC624?style=for-the-badge&logo=linux&logoColor=white&labelColor=101010&logoSize=auto)](https://www.linux.org/)
+[![Redis](https://img.shields.io/badge/redis-FF4438?style=for-the-badge&logo=redis&logoColor=white&labelColor=101010)](https://redis.io/)
+[![Gunicorn](https://img.shields.io/badge/gunicorn-499848?style=for-the-badge&logo=gunicorn&logoColor=white&labelColor=101010&logoSize=auto)](https://gunicorn.org/)
+[![Gunicorn](https://img.shields.io/badge/celery-37814A?style=for-the-badge&logo=celery&logoColor=white&labelColor=101010&logoSize=auto)](https://docs.celeryq.dev/en/stable/)
 
+<p align="center">
+  <a href="#-key-technical-decisions">Key Technical Decisions</a> •
+  <a href="#-measured-improvements">Measured improvements</a> •
+  <a href="#-what-i-would-do-differently-in-production">What I Would Do Different?</a> •
+  <a href="#-trade-offs-and-design-decisions">Trade-offs</a> •
+  <a href="#-example-endpoints">Example Endpoints</a> •
+  <a href="#-local-setup">Local Setup</a> •
+  <a href="#-future-improvements">Future Improvements</a>
+</p>
+
+### Architecture
 ---
+
+![architecture](architecture.png)
 
 ## 🧠 Key Technical Decisions
 
@@ -149,7 +160,7 @@ JWT was chosen to ensure scalability and decoupled authentication in distributed
 
 ---
 
-## 12. Admin Interface (Django Admin)
+### 12. Admin Interface (Django Admin)
 
 The project includes an administrative panel built with Django Admin to manage application data efficiently.
 
@@ -168,7 +179,7 @@ Use cases:
 
 ---
 
-## 13. Email Delivery (SMTP)
+### 13. Email Delivery (SMTP)
 The app uses Simple Mail Transfer Protocol for:
 
 * Transactional emails (account actions, order notifications)
@@ -178,7 +189,7 @@ The app uses Simple Mail Transfer Protocol for:
 
 ---
 
-## 14. Asynchronous Tasks (Celery)
+### 14. Asynchronous Tasks (Celery)
 
 - Integrated **Celery** with **Redis** as the message broker to handle background jobs.
 - Offloads time-consuming tasks (sending emails, heavy computations) from the request/response cycle.
@@ -187,7 +198,7 @@ The app uses Simple Mail Transfer Protocol for:
 
 ---
 
-## 15. Logging (Python Logging)
+### 15. Logging (Python Logging)
 
 - Configured Django logging using Python’s built-in `logging` module.
 - Separate log levels for development and production (INFO, WARNING, ERROR).
@@ -195,7 +206,7 @@ The app uses Simple Mail Transfer Protocol for:
 - Structured logs for easier monitoring and debugging of issues.
 - Prepared to integrate with external monitoring tools (e.g., Sentry, ELK stack).
 
-## 16. Signals & Receivers
+### 16. Signals & Receivers
 
 - Implemented Django signals to handle side effects in a decoupled way.
 - Used receivers for events such as user creation, order placement, and data updates.
@@ -301,6 +312,15 @@ Here is a short and clean section you can add right after the previous one:
 
 ---
 
+## 🔌 Example Endpoints
+
+* GET     /store/products/
+* GET     /store/products/{id}/
+* POST    /store/carts/
+* POST    /store/carts/{id}/cart-items/
+* POST    /auth/jwt/create/
+* POST    /auth/jwt/refresh/
+
 ## 🧪 Running Tests
 
 The project includes a full automated test suite with pytest:
@@ -323,7 +343,7 @@ Covers:
 Run Locust:
 
 ```bash
-locust
+locust -f locustfiles/browse_products.py
 ```
 
 Then open:
@@ -363,24 +383,20 @@ pip install .
 
 ---
 
-### 4. Configure environment variables
-
-Example:
-
-```bash
-SECRET_KEY=your_secret_key
-DEBUG=True
-DATABASE_URL=postgres://user:password@localhost:5432/db_name
-```
-
----
-
-### 5. Run migrations
+### 4. Run migrations
 
 ```bash
 python manage.py migrate
 ```
 
+### 5. Database settings
+```bash
+# dev.py
+DATABASES = {
+    'default':{yourdatabase}
+}
+
+```
 ---
 
 ### 6. Start server
@@ -393,7 +409,7 @@ python manage.py runserver 8000
 
 ## 🔐 Environment Variables
 
-The project uses environment variables for secure configuration:
+The project uses environment variables for secure configuration into production:
 
 * SECRET_KEY
 * DATABASE_URL
@@ -423,23 +439,21 @@ The application was deployed to Heroku as an initial cloud deployment to validat
 
 ---
 
-## 🧑‍💻 About this project
+## 🔮 Future Improvements
 
-This project was built as part of my backend engineering training, focusing on:
-
-* clean code
-* testing
-* performance
-* real-world best practices
-
-It is intended as a solid foundation for production-grade systems.
+- Payment integration (Stripe)
+- Order history per user
+- Inventory tracking with locking
+- Rate limiting & abuse protection
+- Async email queue with retries
 
 ---
 
-
 ## 📬 Contact
 
-GitHub: [https://github.com/Zunku](https://github.com/Zunku)
+* GitHub: [github.com/Zunku](https://github.com/Zunku)
+* Email: danielmendez1708@hotmail.com
+* Linkedin: [linkedin.com/in/danielmd3/](https://linkedin.com/in/danielmd3/)
 
 ---
 
