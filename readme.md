@@ -5,7 +5,6 @@ A complete backend for an e-commerce system built with Django and Django REST Fr
 This project is not just a CRUD. It is designed as a realistic, production-oriented API including JWT authentication, cart management, admin interface, independent apps, validation, automated testing, and performance testing.
 
 
-
 ## 🚀 Tech Stack
 
 [![Python](https://img.shields.io/badge/Python-3.14+-yellow?style=for-the-badge&logo=python&logoColor=white&labelColor=101010)](https://python.org)
@@ -18,6 +17,11 @@ This project is not just a CRUD. It is designed as a realistic, production-orien
 [![Gunicorn](https://img.shields.io/badge/gunicorn-499848?style=for-the-badge&logo=gunicorn&logoColor=white&labelColor=101010&logoSize=auto)](https://gunicorn.org/)
 [![Gunicorn](https://img.shields.io/badge/celery-37814A?style=for-the-badge&logo=celery&logoColor=white&labelColor=101010&logoSize=auto)](https://docs.celeryq.dev/en/stable/)
 
+## Architecture
+---
+
+![architecture](architecture.png)
+
 <p align="center">
   <a href="#-key-technical-decisions">Key Technical Decisions</a> •
   <a href="#-measured-improvements">Measured improvements</a> •
@@ -27,11 +31,6 @@ This project is not just a CRUD. It is designed as a realistic, production-orien
   <a href="#-local-setup">Local Setup</a> •
   <a href="#-future-improvements">Future Improvements</a>
 </p>
-
-### Architecture
----
-
-![architecture](architecture.png)
 
 ## 🧠 Key Technical Decisions
 
