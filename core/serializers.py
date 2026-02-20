@@ -4,7 +4,6 @@ from rest_framework import serializers
 
 # Creating a custom serializer for registering users
 class UserCreateSerializer(BaseUCS):
-    # We can access birth_date because we have a relationship with user in the Customer model
     birth_date = serializers.DateField()
     
     # Always is better to inherit all from a class and overwrite only the fields you need

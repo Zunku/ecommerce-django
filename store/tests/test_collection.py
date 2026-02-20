@@ -7,7 +7,6 @@ import pytest
 
 @pytest.fixture
 def create_collection(api_client):
-    # Function to enable adding a parameter to our fixture. You can't add parameters directly to a fixture.
     def do_create_collection(collection):
         return api_client.post('/store/collections/', collection)
     return do_create_collection
@@ -18,64 +17,40 @@ def delete_collection(api_client):
         return api_client.delete(f'/store/collections/{id}/')
     return do_delete_collection
 
-# Decorator to allow test to change the database
 @pytest.mark.django_db
 class TestCreateCollection():
-    def test_if_user_is_anonymous_returns_401(self):
-        # Each test need to have AAA (Arrange, Act, Assert)
-        # Arrange
-        # In this case is not needed, we are not creating an object here
+    def test_if_user_is_anonymous_returns_401(self, create_collection):
+        response = create_collection({'title':'valid'})
         
-        # Act
-        client = APIClient()
-        response = client.post('/store/collections/', {'title': 'a'})
-        
-        # Assert
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         
-    def test_if_user_is_not_admin_return_403(self):
-        client=APIClient()
-        client.force_authenticate(user={})
-        response = client.post('/store/collections/', {'title': 'a'})
+    def test_if_user_is_not_admin_return_403(self, create_collection, authenticate):
+        authenticate()
+        
+        response = create_collection({'title':'valid'})
         
         assert response.status_code == status.HTTP_403_FORBIDDEN
         
-    def test_if_data_is_invalid_return_400(self, authenticate):
-        # Fixture to auth user
-        client=APIClient()
-        client.force_authenticate(user=User(is_staff=True))
-        response = client.post('/store/collections/', {'title': ''})
+    def test_if_data_is_invalid_return_400(self, authenticate, create_collection):
+        authenticate(True)
         
-        # test with multiple assertions. A test can have multiple assertions, but with a single responsability
+        response = create_collection({'title':''})
+        
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data['title'] is not None
         
-    # api_client is a fixture
-    def test_if_data_is_valid_return_201(self, api_client, create_collection):
-        api_client.force_authenticate(user=User(is_staff=True))
-        # Fixture with parameters
-        response = create_collection({'title':'a'})
+    def test_if_data_is_valid_return_201(self, authenticate, create_collection):
+        authenticate(True)
+        
+        response = create_collection({'title':'valid'})
+        
         assert response.status_code == status.HTTP_201_CREATED
-        # Another option will be to access directly to the created coleccion but that is an implementation, the less our test know about the intern about our system, will be more reliable.
         assert response.data['id'] > 0
-        
-        
-    # Here pytest realizes that you need api_client for create_collection and authenticate. So pytest creates a single api_client for this test, and the same object is inyected in both fixtures
-    def test_if_user_is_not_admin_return_403_v2(self, create_collection, authenticate):
-        # Arrange
-        # Modifying api_client state
-        authenticate()
-        # Act
-        # Creating a collection with the same api_client
-        response = create_collection({'title':'a'})
-        # Assert 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
         
 @pytest.mark.django_db
 class TestRetrieveCollection():
     def test_if_collection_exists_return_200(self, api_client):
-        # Arrange
-        # Here we are testing an implementation, despite it breaks the rule, in this case is the best option
+        # Here we are testing an implementation, not a behaviour, despite it breaks the rule, in this case is the best option
         # Software engineer is not black and white, sometimes you need to break the rules.
         collection = baker.make('Collection')
         
@@ -99,7 +74,6 @@ class TestUpdateCollection():
         collection = baker.make('Collection')
         response = api_client.put(f'/store/collections/{collection.id}/')
         
-        # Assert
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         
     def test_if_user_is_not_admin_return_403(self, api_client, authenticate):

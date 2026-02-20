@@ -1,4 +1,3 @@
-insert into store_customers (id, phone, birth_date, user_id, membership) values (1, '100-905-4399', '9/12/1975', 1, 'G');
 insert into store_customers (id, phone, birth_date, user_id, membership) values (2, '264-855-2391', '10/11/1984', 2, 'G');
 insert into store_customers (id, phone, birth_date, user_id, membership) values (3, '787-945-4114', '5/13/1985', 3, 'B');
 insert into store_customers (id, phone, birth_date, user_id, membership) values (4, '398-174-0288', '2/4/2001', 4, 'G');

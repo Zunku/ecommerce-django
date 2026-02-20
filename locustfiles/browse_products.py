@@ -1,6 +1,5 @@
 from locust import HttpUser, task, between
 from random import randint
-# When running a performance test, locust will create an instance of this class for each user, and execute the tasks defined in this class
 class WebsiteUser(HttpUser):
     # Locus will wait between 1 to 5 between each task
     wait_time = between(1, 5)
