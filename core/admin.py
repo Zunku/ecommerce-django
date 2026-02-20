@@ -7,7 +7,6 @@ from store.models import Product
 from store.admin import ProductImageInline
 
 from .models import User
-# We need to add the app to settings.py
 
 # Registering admin with the new extended User model
 @admin.register(User)

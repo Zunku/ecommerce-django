@@ -26,23 +26,16 @@ admin.site.site_header = 'Storefront Admin'
 # Chaning the index_title
 admin.site.index_title = 'Admin'
 
-# A spacial variable that stores URLs, receives requests and directs them to their correspondant apps
 urlpatterns = [
     path('', include('core.urls')),
     path('admin/', admin.site.urls),
-    
-    # Any url that starts with playground will be routed to our playground app
-    path('playground/', include('playground.urls')),
-    
     path('store/', include('store.urls')),
-
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
-
     path('__debug__/', include(debug_toolbar.urls))
 ]
 
-# Here we are telling Django that we want to expose that is defined here, and any request should be routed to the file system at this adress. Good for development, not production
+# Here we are telling Django that we want to expose what is defined here, and any request should be routed to the file system at this adress. Good for development, not production
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, 
                           document_root=settings.MEDIA_ROOT)

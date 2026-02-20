@@ -1,7 +1,6 @@
 # Importing settings module to use AUTH_USER_MODEL and mantain independency
 from django.conf import settings
-# Module for Data Validation
-from django.core.validators import MinValueValidator, FileExtensionValidator
+from django.core.validators import MinValueValidator
 from django.db import models
 from uuid import uuid4
 
@@ -11,37 +10,17 @@ class Promotion(models.Model):
     description = models.CharField(max_length=255)
     discount = models.FloatField()
     
-# Product class that inherit from models.Model class
-# Django generate our database automatically based on our models.
-# Django generate the primary_key automatically for each model
-# This will generate a table 'Products' with a 'title' column
 class Product(models.Model):
-    # Assigning an atribute title with Char data field
     title = models.CharField(max_length=255)
-    # slug is an extension of the url to help search motors to find an object. Usually a string related to the object
     slug = models.SlugField()
-    # A better data field for large text
-    # Data Validation
-    # blank is an argument to allow empty text when creating the object, use it in text fields
     description = models.TextField(blank=True, null=True)
-    # For monetary values always use DecimalField
-    # Better than float bc it don't have rounding issues
-    # The max price of our products will be 9999.99
     unit_price = models.DecimalField(max_digits=6, 
                                      decimal_places=2,
-                                     # Data Validation
-                                     # Here you can put your validators, (minvalue, message=optional)
                                      validators=[MinValueValidator(1)])
     
     inventory = models.IntegerField(validators=[MinValueValidator(1)])
-    # To storing the date of the last object update
-    # auto_now=True Automatically saves the current date on this field
     last_update = models.DateTimeField(auto_now=True)
-    # If the referenced class is after this one, you can pass it as a string
     collection = models.ForeignKey('Collection', on_delete=models.PROTECT, related_name='product')
-    
-    # Defining a Many to Many relationship between two models
-    # related_name allows you to change the name of the related class field. If you do this, you have to be consistent and change all the models related_name. It's better to stick with Django convention
     promotions = models.ManyToManyField(Promotion, blank=True)
     
     # Changing the object representation when you convert it to a string
@@ -49,26 +28,18 @@ class Product(models.Model):
         # Now it will return it's title
         return self.title
     
-    # Creating a Meta class to define the specific order of our collection objects
-    # A Djando Meta class it's a way to configure our models. Are instructions for Django
     class Meta:
-        # Allows you to define an order
         ordering = ['title']
     
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    # FileField : A field for any kind of document
-    # This field saves the relative route of our image
     image = models.ImageField(upload_to='store/images', validators=[validate_file_size])
 
 class Customer(models.Model):
-    # A CharField can be null for default
     phone = models.CharField(max_length=255)
     birth_date = models.DateField(null=True, blank=True)
-    # Uppercase to indicate that this is a fix list of values, we don't have to mess with it
-    # Defining  a list of choices for membership field
     
-    # To avoid having to change to values when changing the default value for membership, we create a single variable for each valu
+    # Uppercase to indicate that this is a fix list of values, we don't have to mess with it 
     MEMBERSHIP_BRONZE = 'B'
     MEMBERSHIP_SILVER = 'S'
     MEMBERSHIP_GOLD = 'G'
@@ -81,7 +52,6 @@ class Customer(models.Model):
     
     # This class it's for change metadata
     class Meta:
-        # Change db table name, is not recomended because you are breking the convention and also have to change every table name to make consistency
         db_table = 'store_customers'
         ordering = ['user__first_name', 'user__last_name']
         # Creating custom model permission
@@ -90,17 +60,15 @@ class Customer(models.Model):
         ]
         
     # Creating User Profiles. Customer model represent User Profile
-    # We had to delete first_name and last_name fields, now them will be stored in the user model, so we will need to make a relation, and change parameters names
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     
     def __str__(self):
-        # Now it will return it's first and lastname when calling the object
         return f'{self.user.first_name} {self.user.last_name}'
     
     
 class Order(models.Model):
     placed_at = models.DateTimeField(auto_now_add=True)
-    # We should never delete orders, because orders represent our sales
+    # We should never delete orders, because orders represent our sales, that's why we user PROTECT
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     
     PS_PENDING = 'P'
@@ -114,69 +82,45 @@ class Order(models.Model):
     payment_status = models.CharField(max_length=1, choices=PAYMENT_STATUS_CHOICES, default=PS_PENDING)
     
     class Meta:
-        # Creating custom permissions
         permissions = [
-            # (codename/description to show)
             ('cancel_order', 'Can cancel order')
         ]
     
-# Defining a 1 to 1 relationship
 class Adress(models.Model):
     street = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
-    # OneToOneField is a model that allows you to create a One To One relationship with the parent, requieres the parent model. Django creates the reverse relationship automaticaly for any relationship
-    # You have to choose which class will be the parent, you need to think like "Each customer have an address". It can't exist an address without customer
-    # on_delete allows you to control what will happen with the child when the parent is deleted. model.CASCADE deletes the child when the parent is deleted.
-    # primary_key forces this field to be unique, avoiding a 1 to * relationship
     customer = models.OneToOneField(Customer, on_delete=models.CASCADE, primary_key=True)
     zip = models.CharField(max_length=255)
     
 class Collection(models.Model):
     title = models.CharField(max_length=255)
-    # related_name = '+' Tells Django not to create the reverse relationship. Useful to avoid conflicts on a circular relationship
-    # null saves nulls into the database, use it in numeric fields
     featured_product = models.ForeignKey('Product', on_delete=models.SET_NULL, null=True, related_name='+')
 
-    # Changing the object representation when you convert it to a string
     def __str__(self):
-        # Now it will return it's title
         return self.title
     
-    # Creating a Meta class to define the specific order of our collection objects
-    # A Djando Meta class it's a way to configure our models. Are instructions for Django
     class Meta:
-        # Allows you to define an order
         ordering = ['title']
         
-# Defining a * to 1 relationship with ForeignKey
 class OrderItem(models.Model):
-    # ForeignKey: It's a reference to another model, like say "this registry belongs to another one". Allows you to create a * to 1 relationship with the parent. Each Item saves an OrderID.
     order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name='orderitems')
-    # related_name Allow us to change the related name with another model
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='orderitems')
     quantity = models.PositiveSmallIntegerField()
-    # Despite we already have the product price in the product model, we should always store the price of the product at the order time
+    # Despite we already have the product price in the product model, we should always store the price of the product at the order time, because price can change after making an order
     unit_price = models.DecimalField(max_digits=6, decimal_places=2)
 
 
 class Cart(models.Model):
     # GUID: Globally Unique Identifier. Are an unique ID of 32 characters that help to avoid hackers access to our URLs, using simple IDs it's ultra easy for a third party to access these endpoints
-    # default=uuid4 Here the uuid is randomdly created, we are passing just a reference to that funcion, not calling it because that way we are gona hardcode our migration
-    # The disadvantage is that it will be 3 times heavy (32 bytes) that a simple ID (8 bytes). And this ID is also stored on CartItemID, so it will be n of OrderItems heavier
-    # But cart's will be temporals, are not gona grow indefinitly, and making calculations, 1 million of records only storage 45 MB extra. It's not a big impact.
     # Cart's will be anonymus and public, a new client can make a cart without an account, that's why GUID are necesary, but as people place orders, we are gonna move this records to Order and OrderItem tables, in those tables we are not gonna use GUIDs, because the Orders API is gonna be secure and not open to anonymous users, a client has to autenticate and be autorized to acces a particular order
-    # Also searching for a GUID is a bit slower that searching for an ID, but remember, premature optimization is the root of all evils
-    # You have to choose the id dtype from the begining, you can't change it in middle of the developing
-    # So, you have to think every decision based on this kind of things
     id = models.UUIDField(primary_key=True, default=uuid4)
     created_at = models.DateField(auto_now_add=True)
     
-# Creating and association class. A class that represent the atributes that will have the association between two classes
 class CartItem(models.Model):
     class Meta:
         # Unique constraint
         # We want to make sure we only have a single instance of a product in our shoping cart. If the client add the same product to the same cart multiple times, we don't want to create another CartItem instance, instead, we want to increase the quantity
-        # Here we can have multiples unique constraints on diferent fields, on each list we can add add a constraint
+        # Here we can have multiples unique constraints on diferent fields, on each list we can add a constraint
         unique_together = [['cart', 'product']]
     
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')

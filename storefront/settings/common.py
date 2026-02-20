@@ -12,17 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from datetime import timedelta
 from pathlib import Path
 import os
-# crontab is an object we can use to have better control in our periodical/sheduled tasks
-from celery.schedules import crontab
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-
-# Application definition
 
 INSTALLED_APPS = [
     # Django/built-in apps
@@ -40,7 +31,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     # Our applications
-    'playground',
     'debug_toolbar',
     'store',
     'tags',
@@ -137,19 +127,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Rest framework config
 REST_FRAMEWORK = {
     # Deactivate automatic convertion of decimal to string
     'COERCE_DECIMAL_TO_STRING': False,
-    # Apply a page size to all resources
-    # 'PAGE_SIZE': 10,
-    # Apply a pagination to all resources
-    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination'
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    # Asignating a default permission, this is the default
-    # Permitions determines which users can access our endpoints
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny'
     ]
@@ -177,22 +160,6 @@ SIMPLE_JWT = {
 ADMINS =[
     ('Zunku', 'admin@zunkubuy.com')
 ]
-
-CELERY_BEAT_SCHEDULE = {
-     'notify_customers': {
-         # Our task
-         'task': 'playground.tasks.notify_customers',
-         # Every 5 seconds
-         'schedule': 5,
-         # Will be executed at Monday 7:30am
-         #  'schedule': crontab(day_of_week=1, hour=7, minute=30),
-         # Executed every 15 minutes
-         #  'schedule': crontab(minute='*/15'),
-         # Also you can add args and kwargs
-         'args': ['Hello world'],
-        #  'kwargs': {'Name':'Zunku'},
-     }
-}
 
 LOGGING = {
     'version':1,

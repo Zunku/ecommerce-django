@@ -1,13 +1,11 @@
 import os
 from celery import Celery
 
-# Creating an env variable
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'storefront.settings.dev')
 
-# Instancing celery
 celery = Celery('storefront')
 
-# Loading settings object from django, all our configurations will start with CELLERY
+# Loading settings object from django, all our configurations will start with CELERY
 celery.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Load tasks from all tasks.py modules in our project
